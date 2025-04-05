@@ -5,6 +5,32 @@ import { Search, Mic, Camera, User } from "lucide-react";
 import { newsArticles, discoverCards } from "@/data/mockSearchResults";
 import { useState } from "react";
 
+// Define the interface for the Web Speech API
+interface Window {
+  SpeechRecognition?: new () => SpeechRecognition;
+  webkitSpeechRecognition?: new () => SpeechRecognition;
+}
+
+interface SpeechRecognition extends EventTarget {
+  lang: string;
+  interimResults: boolean;
+  start: () => void;
+  stop: () => void;
+  onresult: (event: SpeechRecognitionEvent) => void;
+  onerror: (event: Event) => void;
+  onend: () => void;
+}
+
+interface SpeechRecognitionEvent {
+  results: {
+    [key: number]: {
+      [key: number]: {
+        transcript: string;
+      }
+    }
+  }
+}
+
 const HomePage = () => {
   const navigate = useNavigate();
   const { searchTerm, setSearchTerm, isListening, setIsListening } = useSearch();
@@ -25,13 +51,13 @@ const HomePage = () => {
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
       setIsListening(!isListening);
       
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      const recognition = new SpeechRecognition();
+      const SpeechRecognitionAPI = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      const recognition = new SpeechRecognitionAPI();
       
       recognition.lang = 'en-US';
       recognition.interimResults = false;
       
-      recognition.onresult = (event) => {
+      recognition.onresult = (event: SpeechRecognitionEvent) => {
         const transcript = event.results[0][0].transcript;
         setSearchTerm(transcript);
         setIsListening(false);
