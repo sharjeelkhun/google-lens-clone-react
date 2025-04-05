@@ -2,10 +2,15 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useSearch } from "@/context/SearchContext";
-import { ArrowLeft, X, Camera, Mic, Search, Upload, Grid, Settings } from "lucide-react";
+import { 
+  ArrowLeft, X, Camera, Mic, Search, 
+  Upload, Grid, Settings, Clock, TrendingUp 
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { mockTextSearchResults } from "@/data/mockSearchResults";
 import { startSpeechRecognition } from "@/utils/speechRecognition";
+import { motion, AnimatePresence } from "framer-motion";
+import SearchSuggestions from "@/components/SearchSuggestions";
 
 const SearchPage = () => {
   const navigate = useNavigate();
@@ -17,7 +22,8 @@ const SearchPage = () => {
     setSearchImage,
     isListening,
     setIsListening,
-    clearSearch
+    clearSearch,
+    addToHistory
   } = useSearch();
   
   const [cameraActive, setCameraActive] = useState(false);
@@ -25,11 +31,28 @@ const SearchPage = () => {
   const [results, setResults] = useState<any[]>([]);
   const [flashActive, setFlashActive] = useState(false);
   const [showCameraOptions, setShowCameraOptions] = useState(true);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   
   const searchInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Handle clicks outside of suggestions to close them
+  const suggestionsRef = useRef<HTMLDivElement>(null);
+  
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (suggestionsRef.current && !suggestionsRef.current.contains(event.target as Node)) {
+        setShowSuggestions(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   // Check if we should open camera immediately
   useEffect(() => {
@@ -44,6 +67,7 @@ const SearchPage = () => {
     }
   }, [location.state]);
 
+  // Filter search results based on input
   useEffect(() => {
     if (searchTerm && !cameraActive) {
       // Simulating search results
@@ -113,6 +137,9 @@ const SearchPage = () => {
             preview: imageUrl
           });
           
+          // Add to search history
+          addToHistory("", "image", imageUrl);
+          
           // Stop camera stream
           const stream = videoRef.current?.srcObject as MediaStream;
           if (stream) {
@@ -137,6 +164,9 @@ const SearchPage = () => {
         preview: imageUrl
       });
       
+      // Add to search history
+      addToHistory("", "image", imageUrl);
+      
       // Navigate to results page
       navigate('/results');
     }
@@ -145,7 +175,8 @@ const SearchPage = () => {
   const handleMicClick = () => {
     const started = startSpeechRecognition(
       (text) => setSearchTerm(text),
-      (listening) => setIsListening(listening)
+      (listening) => setIsListening(listening),
+      { interimResults: true }
     );
     
     if (!started) {
@@ -156,8 +187,17 @@ const SearchPage = () => {
   const handleTextSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchTerm.trim()) {
+      // Add to search history
+      addToHistory(searchTerm, "text");
+      
       navigate('/results');
     }
+  };
+
+  const handleSelectSuggestion = (suggestion: string) => {
+    setSearchTerm(suggestion);
+    addToHistory(suggestion, "text");
+    navigate('/results');
   };
 
   const handleSelectGallery = () => {
@@ -176,19 +216,34 @@ const SearchPage = () => {
   return (
     <div className="min-h-screen bg-white flex flex-col">
       {cameraActive ? (
-        <div className="flex flex-col h-screen relative">
+        <motion.div 
+          className="flex flex-col h-screen relative"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+        >
           <div className="absolute top-0 left-0 right-0 z-10 p-4 flex justify-between items-center">
-            <button 
+            <motion.button 
               onClick={handleCancelCamera}
               className="w-10 h-10 flex items-center justify-center bg-black/30 rounded-full text-white"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
             >
               <ArrowLeft size={20} />
-            </button>
+            </motion.button>
             
             {/* Flash effect overlay */}
-            {flashActive && (
-              <div className="absolute inset-0 bg-white animate-flash z-20"></div>
-            )}
+            <AnimatePresence>
+              {flashActive && (
+                <motion.div 
+                  className="absolute inset-0 bg-white z-20"
+                  initial={{ opacity: 1 }}
+                  animate={{ opacity: 0 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                />
+              )}
+            </AnimatePresence>
           </div>
           
           {/* Camera View */}
@@ -203,84 +258,159 @@ const SearchPage = () => {
           
           {/* Camera UI Overlay - Viewfinder */}
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <div className="w-64 h-64 border-2 border-white rounded-lg"></div>
+            <motion.div 
+              className="w-64 h-64 border-2 border-white rounded-lg"
+              initial={{ scale: 1.2, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ type: "spring", stiffness: 100 }}
+            />
           </div>
           
           {/* Camera Controls */}
           <div className="absolute bottom-0 left-0 right-0 p-8 flex justify-center">
-            <button 
+            <motion.button 
               onClick={handleCapture}
               className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-lg"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
             >
               <div className="w-14 h-14 border-2 border-gray-300 rounded-full"></div>
-            </button>
+            </motion.button>
           </div>
-        </div>
+        </motion.div>
       ) : (
         <>
           {/* Header */}
-          <header className="p-4 flex items-center space-x-3">
-            <button onClick={() => navigate('/')} className="flex-shrink-0">
+          <header className="p-4 flex items-center space-x-3 bg-white sticky top-0 z-10 shadow-sm">
+            <motion.button 
+              onClick={() => navigate('/')} 
+              className="flex-shrink-0"
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+            >
               <ArrowLeft className="w-5 h-5 text-google-dark-gray" />
-            </button>
+            </motion.button>
             
-            <form onSubmit={handleTextSearch} className="flex-1">
-              <div className="search-bar-container">
-                <input
-                  ref={searchInputRef}
-                  type="text"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Search Google or type a URL"
-                  className="flex-1 bg-transparent"
-                  autoFocus
-                />
-                <div className="flex items-center space-x-3">
-                  {searchTerm && (
-                    <button type="button" onClick={() => setSearchTerm('')}>
-                      <X className="w-5 h-5 text-google-dark-gray" />
-                    </button>
-                  )}
-                  {isListening && (
-                    <div className="w-4 h-4 rounded-full bg-google-blue animate-pulse mr-1"></div>
-                  )}
-                  <button type="button" onClick={handleMicClick}>
-                    <Mic className="w-5 h-5 text-google-dark-gray" />
-                  </button>
-                  <button type="button" onClick={handleCameraClick}>
-                    <Camera className="w-5 h-5 text-google-dark-gray" />
-                  </button>
+            <div className="flex-1 relative" ref={suggestionsRef}>
+              <form onSubmit={handleTextSearch}>
+                <div className="search-bar-container">
+                  <input
+                    ref={searchInputRef}
+                    type="text"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    onFocus={() => setShowSuggestions(true)}
+                    placeholder="Search Google or type a URL"
+                    className="flex-1 bg-transparent"
+                    autoFocus
+                  />
+                  <div className="flex items-center space-x-3">
+                    {searchTerm && (
+                      <motion.button 
+                        type="button" 
+                        onClick={() => setSearchTerm('')}
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        exit={{ scale: 0 }}
+                      >
+                        <X className="w-5 h-5 text-google-dark-gray" />
+                      </motion.button>
+                    )}
+                    {isListening && (
+                      <motion.div 
+                        className="w-4 h-4 rounded-full bg-google-blue mr-1"
+                        animate={{ 
+                          opacity: [0.5, 1, 0.5],
+                          scale: [1, 1.1, 1]
+                        }}
+                        transition={{ 
+                          repeat: Infinity,
+                          duration: 1.5
+                        }}
+                      ></motion.div>
+                    )}
+                    <motion.button 
+                      type="button" 
+                      onClick={handleMicClick}
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                    >
+                      <Mic className="w-5 h-5 text-google-dark-gray" />
+                    </motion.button>
+                    <motion.button 
+                      type="button" 
+                      onClick={handleCameraClick}
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                    >
+                      <Camera className="w-5 h-5 text-google-dark-gray" />
+                    </motion.button>
+                  </div>
                 </div>
-              </div>
-            </form>
+              </form>
+              
+              {/* Search suggestions */}
+              <AnimatePresence>
+                {showSuggestions && searchTerm && (
+                  <div className="absolute w-full">
+                    <SearchSuggestions
+                      searchTerm={searchTerm}
+                      onSelectSuggestion={handleSelectSuggestion}
+                    />
+                  </div>
+                )}
+              </AnimatePresence>
+            </div>
           </header>
           
           {/* Search Options when not searching */}
           {!showResults && searchTerm.length === 0 && showCameraOptions && (
-            <div className="flex flex-col items-center justify-center flex-1 p-6">
-              <div className="text-center mb-8">
+            <motion.div 
+              className="flex flex-col items-center justify-center flex-1 p-6"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.2 }}
+            >
+              <motion.div 
+                className="text-center mb-8"
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ type: "spring", stiffness: 100, delay: 0.3 }}
+              >
                 <Camera size={48} className="mx-auto mb-4 text-google-blue" />
                 <h2 className="text-xl font-medium mb-2">Search with your camera</h2>
                 <p className="text-gray-600">Take a photo or import an existing one</p>
-              </div>
+              </motion.div>
               
               <div className="flex flex-col w-full max-w-xs space-y-4">
-                <Button 
-                  onClick={handleCameraClick} 
-                  className="bg-google-blue hover:bg-google-blue/90 text-white flex items-center justify-center py-6"
+                <motion.div
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ type: "spring", stiffness: 100, delay: 0.4 }}
                 >
-                  <Camera className="mr-2 h-5 w-5" />
-                  Use camera
-                </Button>
+                  <Button 
+                    onClick={handleCameraClick} 
+                    className="bg-google-blue hover:bg-google-blue/90 text-white flex items-center justify-center py-6 w-full"
+                  >
+                    <Camera className="mr-2 h-5 w-5" />
+                    Use camera
+                  </Button>
+                </motion.div>
                 
-                <Button 
-                  variant="outline" 
-                  onClick={handleSelectGallery}
-                  className="flex items-center justify-center py-6 border-gray-300"
+                <motion.div
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ type: "spring", stiffness: 100, delay: 0.5 }}
                 >
-                  <Upload className="mr-2 h-5 w-5" />
-                  Choose image
-                </Button>
+                  <Button 
+                    variant="outline" 
+                    onClick={handleSelectGallery}
+                    className="flex items-center justify-center py-6 border-gray-300 w-full"
+                  >
+                    <Upload className="mr-2 h-5 w-5" />
+                    Choose image
+                  </Button>
+                </motion.div>
                 
                 <input 
                   type="file" 
@@ -290,22 +420,32 @@ const SearchPage = () => {
                   className="hidden"
                 />
               </div>
-            </div>
+            </motion.div>
           )}
           
           {/* Search Results */}
           {showResults && (
-            <div className="flex-1 p-4 overflow-y-auto">
+            <motion.div 
+              className="flex-1 p-4 overflow-y-auto"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.1 }}
+            >
               {results.length > 0 ? (
                 <div className="space-y-4">
-                  {results.map(result => (
-                    <div 
+                  {results.map((result, index) => (
+                    <motion.div 
                       key={result.id} 
                       className="border-b border-gray-200 pb-3"
                       onClick={() => {
                         setSearchTerm(result.title);
+                        addToHistory(result.title, "text");
                         navigate('/results');
                       }}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.05 }}
+                      whileHover={{ backgroundColor: "#f8f9fa" }}
                     >
                       <div className="flex items-center mb-1">
                         <img 
@@ -317,7 +457,7 @@ const SearchPage = () => {
                       </div>
                       <h3 className="text-lg text-blue-700 mb-1 font-normal">{result.title}</h3>
                       <p className="text-sm text-gray-600">{result.description}</p>
-                    </div>
+                    </motion.div>
                   ))}
                 </div>
               ) : (
@@ -325,24 +465,38 @@ const SearchPage = () => {
                   No results found for "{searchTerm}"
                 </div>
               )}
-            </div>
+            </motion.div>
           )}
           
           {/* Bottom Navigation */}
-          <div className="fixed bottom-0 left-0 right-0 bg-white p-3 border-t flex justify-around shadow-md">
-            <div className="flex flex-col items-center text-google-blue">
+          <motion.div 
+            className="fixed bottom-0 left-0 right-0 bg-white p-3 border-t flex justify-around shadow-md"
+            initial={{ y: 50 }}
+            animate={{ y: 0 }}
+            transition={{ type: "spring", stiffness: 200, delay: 0.3 }}
+          >
+            <motion.div 
+              className="flex flex-col items-center text-google-blue"
+              whileHover={{ scale: 1.1 }}
+            >
               <Search className="w-5 h-5" />
               <span className="text-xs mt-1">Search</span>
-            </div>
-            <div className="flex flex-col items-center text-gray-500">
+            </motion.div>
+            <motion.div 
+              className="flex flex-col items-center text-gray-500"
+              whileHover={{ scale: 1.1 }}
+            >
               <Camera className="w-5 h-5" />
               <span className="text-xs mt-1">Lens</span>
-            </div>
-            <div className="flex flex-col items-center text-gray-500">
+            </motion.div>
+            <motion.div 
+              className="flex flex-col items-center text-gray-500"
+              whileHover={{ scale: 1.1 }}
+            >
               <Grid className="w-5 h-5" />
               <span className="text-xs mt-1">Discover</span>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         </>
       )}
     </div>

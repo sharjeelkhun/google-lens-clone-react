@@ -1,6 +1,4 @@
 
-@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -9,95 +7,163 @@
   :root {
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
-
     --card: 0 0% 100%;
     --card-foreground: 222.2 84% 4.9%;
-
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
-
     --primary: 221.2 83.2% 53.3%;
     --primary-foreground: 210 40% 98%;
-
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222.2 47.4% 11.2%;
-
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
-
     --accent: 210 40% 96.1%;
     --accent-foreground: 222.2 47.4% 11.2%;
-
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
-
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
     --ring: 221.2 83.2% 53.3%;
-
     --radius: 0.5rem;
+
+    /* Google specific colors */
+    --google-blue: #4285f4;
+    --google-red: #ea4335;
+    --google-yellow: #fbbc05;
+    --google-green: #34a853;
+    --google-dark-gray: #5f6368;
+    --google-gray: #f1f3f4;
   }
 
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 217.2 91.2% 59.8%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 224.3 76.5% 48%;
+  }
+}
+
+@layer base {
   * {
     @apply border-border;
-    font-family: 'Roboto', sans-serif;
   }
 
   body {
     @apply bg-background text-foreground;
-    -webkit-tap-highlight-color: transparent;
+    font-feature-settings:
+      "rlig" 1,
+      "calt" 1;
     overscroll-behavior: none;
-  }
-
-  input, button {
-    @apply outline-none;
   }
 }
 
-@layer utilities {
-  .google-shadow {
-    box-shadow: 0 1px 6px rgba(32, 33, 36, 0.28);
-  }
-  
-  .google-icon {
-    @apply w-6 h-6 text-google-dark-gray;
-  }
-
+@layer components {
   .search-bar-container {
-    @apply flex items-center w-full bg-white google-shadow rounded-full px-4 py-3;
+    @apply flex items-center px-4 py-2 rounded-full w-full border border-gray-300 focus-within:border-google-blue focus-within:shadow-md;
+    transition: all 0.2s ease;
   }
 
-  .button-ripple {
-    @apply relative overflow-hidden;
+  /* Animation for flash effect */
+  .animate-flash {
+    animation: flash 0.3s forwards;
+  }
+
+  /* Animation for search suggestion dropdown */
+  @keyframes fadeInDown {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .fade-in-down {
+    animation: fadeInDown 0.2s forwards;
+  }
+
+  /* Glass effect for viewfinder */
+  .glass {
+    @apply backdrop-blur-sm bg-white/10 border border-white/20;
+  }
+
+  /* Google icon background colors */
+  .bg-google-blue {
+    background-color: var(--google-blue);
+  }
+
+  .bg-google-red {
+    background-color: var(--google-red);
+  }
+
+  .bg-google-green {
+    background-color: var(--google-green);
+  }
+
+  .bg-google-yellow {
+    background-color: var(--google-yellow);
+  }
+
+  .text-google-blue {
+    color: var(--google-blue);
+  }
+
+  .text-google-red {
+    color: var(--google-red);
+  }
+
+  .text-google-green {
+    color: var(--google-green);
+  }
+
+  .text-google-yellow {
+    color: var(--google-yellow);
   }
   
-  .button-ripple:after {
-    content: '';
-    @apply absolute bg-black opacity-0 rounded-full w-5 h-5 transform -translate-x-1/2 -translate-y-1/2;
-    animation: ripple 0.6s linear;
-  }
-  
-  @keyframes ripple {
+  /* Pulse animation for voice indicator */
+  @keyframes pulse {
     0% {
-      transform: scale(0);
-      opacity: 0.2;
-    }
-    100% {
-      transform: scale(12);
-      opacity: 0;
-    }
-  }
-  
-  @keyframes flash {
-    0%, 100% {
-      opacity: 0;
+      transform: scale(0.95);
+      opacity: 0.7;
     }
     50% {
+      transform: scale(1.05);
       opacity: 1;
     }
+    100% {
+      transform: scale(0.95);
+      opacity: 0.7;
+    }
   }
-  
-  .animate-flash {
-    animation: flash 0.3s ease-out;
+
+  .animate-pulse-custom {
+    animation: pulse 1.5s infinite;
+  }
+
+  /* Flash animation for camera */
+  @keyframes flash {
+    0% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+    }
   }
 }
