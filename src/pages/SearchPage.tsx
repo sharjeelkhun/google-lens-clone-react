@@ -36,6 +36,11 @@ const SearchPage = () => {
     if (state?.openCamera) {
       handleCameraClick();
     }
+    
+    // Focus on the search input when the page loads
+    if (searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
   }, [location.state]);
 
   useEffect(() => {
@@ -247,7 +252,7 @@ const SearchPage = () => {
           </header>
           
           {/* Search Options when not searching */}
-          {!showResults && (
+          {!showResults && searchTerm.length === 0 && (
             <div className="flex flex-col items-center justify-center flex-1 p-6">
               <div className="text-center mb-8">
                 <Camera size={48} className="mx-auto mb-4 text-google-blue" />
@@ -290,7 +295,14 @@ const SearchPage = () => {
               {results.length > 0 ? (
                 <div className="space-y-4">
                   {results.map(result => (
-                    <div key={result.id} className="border-b border-gray-200 pb-3">
+                    <div 
+                      key={result.id} 
+                      className="border-b border-gray-200 pb-3"
+                      onClick={() => {
+                        setSearchTerm(result.title);
+                        navigate('/results');
+                      }}
+                    >
                       <div className="flex items-center mb-1">
                         <img 
                           src={result.favicon} 

@@ -14,7 +14,7 @@ const HomePage = () => {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchTerm.trim()) {
-      navigate('/search');
+      navigate('/results');
     }
   };
 
@@ -77,6 +77,7 @@ const HomePage = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Search or type URL"
               className="flex-1 bg-transparent text-base"
+              onClick={() => navigate('/search')}
             />
             <div className="flex items-center space-x-3">
               {isListening && (
