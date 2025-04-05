@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useSearch } from "@/context/SearchContext";
-import { ArrowLeft, X, Camera, Mic, Search, Upload } from "lucide-react";
+import { ArrowLeft, X, Camera, Mic, Search, Upload, Grid, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { mockTextSearchResults } from "@/data/mockSearchResults";
 import { startSpeechRecognition } from "@/utils/speechRecognition";
@@ -24,6 +24,7 @@ const SearchPage = () => {
   const [showResults, setShowResults] = useState(false);
   const [results, setResults] = useState<any[]>([]);
   const [flashActive, setFlashActive] = useState(false);
+  const [showCameraOptions, setShowCameraOptions] = useState(true);
   
   const searchInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -75,6 +76,7 @@ const SearchPage = () => {
       }
       
       setCameraActive(true);
+      setShowCameraOptions(false);
     } catch (err) {
       console.error("Error accessing camera:", err);
       alert("Failed to access camera: " + (err as Error).message);
@@ -162,20 +164,22 @@ const SearchPage = () => {
     fileInputRef.current?.click();
   };
 
+  const handleCancelCamera = () => {
+    const stream = videoRef.current?.srcObject as MediaStream;
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+    }
+    setCameraActive(false);
+    setShowCameraOptions(true);
+  };
+
   return (
     <div className="min-h-screen bg-white flex flex-col">
       {cameraActive ? (
         <div className="flex flex-col h-screen relative">
           <div className="absolute top-0 left-0 right-0 z-10 p-4 flex justify-between items-center">
             <button 
-              onClick={() => {
-                setCameraActive(false);
-                // Stop camera stream
-                const stream = videoRef.current?.srcObject as MediaStream;
-                if (stream) {
-                  stream.getTracks().forEach(track => track.stop());
-                }
-              }}
+              onClick={handleCancelCamera}
               className="w-10 h-10 flex items-center justify-center bg-black/30 rounded-full text-white"
             >
               <ArrowLeft size={20} />
@@ -206,7 +210,7 @@ const SearchPage = () => {
           <div className="absolute bottom-0 left-0 right-0 p-8 flex justify-center">
             <button 
               onClick={handleCapture}
-              className="w-16 h-16 bg-white rounded-full flex items-center justify-center"
+              className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-lg"
             >
               <div className="w-14 h-14 border-2 border-gray-300 rounded-full"></div>
             </button>
@@ -216,7 +220,7 @@ const SearchPage = () => {
         <>
           {/* Header */}
           <header className="p-4 flex items-center space-x-3">
-            <button onClick={() => navigate('/')}>
+            <button onClick={() => navigate('/')} className="flex-shrink-0">
               <ArrowLeft className="w-5 h-5 text-google-dark-gray" />
             </button>
             
@@ -227,7 +231,7 @@ const SearchPage = () => {
                   type="text"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Search or type URL"
+                  placeholder="Search Google or type a URL"
                   className="flex-1 bg-transparent"
                   autoFocus
                 />
@@ -252,7 +256,7 @@ const SearchPage = () => {
           </header>
           
           {/* Search Options when not searching */}
-          {!showResults && searchTerm.length === 0 && (
+          {!showResults && searchTerm.length === 0 && showCameraOptions && (
             <div className="flex flex-col items-center justify-center flex-1 p-6">
               <div className="text-center mb-8">
                 <Camera size={48} className="mx-auto mb-4 text-google-blue" />
@@ -325,7 +329,7 @@ const SearchPage = () => {
           )}
           
           {/* Bottom Navigation */}
-          <div className="fixed bottom-0 left-0 right-0 bg-white p-4 border-t flex justify-around">
+          <div className="fixed bottom-0 left-0 right-0 bg-white p-3 border-t flex justify-around shadow-md">
             <div className="flex flex-col items-center text-google-blue">
               <Search className="w-5 h-5" />
               <span className="text-xs mt-1">Search</span>
@@ -333,6 +337,10 @@ const SearchPage = () => {
             <div className="flex flex-col items-center text-gray-500">
               <Camera className="w-5 h-5" />
               <span className="text-xs mt-1">Lens</span>
+            </div>
+            <div className="flex flex-col items-center text-gray-500">
+              <Grid className="w-5 h-5" />
+              <span className="text-xs mt-1">Discover</span>
             </div>
           </div>
         </>
