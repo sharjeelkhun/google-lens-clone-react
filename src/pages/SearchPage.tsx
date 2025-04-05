@@ -5,32 +5,7 @@ import { useSearch } from "@/context/SearchContext";
 import { ArrowLeft, X, Camera, Mic, Search, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { mockTextSearchResults } from "@/data/mockSearchResults";
-
-// Define the interface for the Web Speech API
-interface Window {
-  SpeechRecognition?: new () => SpeechRecognition;
-  webkitSpeechRecognition?: new () => SpeechRecognition;
-}
-
-interface SpeechRecognition extends EventTarget {
-  lang: string;
-  interimResults: boolean;
-  start: () => void;
-  stop: () => void;
-  onresult: (event: SpeechRecognitionEvent) => void;
-  onerror: (event: Event) => void;
-  onend: () => void;
-}
-
-interface SpeechRecognitionEvent {
-  results: {
-    [key: number]: {
-      [key: number]: {
-        transcript: string;
-      }
-    }
-  }
-}
+import { startSpeechRecognition } from "@/utils/speechRecognition";
 
 const SearchPage = () => {
   const navigate = useNavigate();
@@ -48,6 +23,7 @@ const SearchPage = () => {
   const [cameraActive, setCameraActive] = useState(false);
   const [showResults, setShowResults] = useState(false);
   const [results, setResults] = useState<any[]>([]);
+  const [flashActive, setFlashActive] = useState(false);
   
   const searchInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -71,7 +47,7 @@ const SearchPage = () => {
       );
       
       setResults(filteredResults);
-      setShowResults(true);
+      setShowResults(filteredResults.length > 0);
     } else {
       setShowResults(false);
     }
@@ -102,6 +78,10 @@ const SearchPage = () => {
 
   const handleCapture = () => {
     if (videoRef.current && canvasRef.current) {
+      // Flash animation
+      setFlashActive(true);
+      setTimeout(() => setFlashActive(false), 300);
+      
       const video = videoRef.current;
       const canvas = canvasRef.current;
       
@@ -156,32 +136,13 @@ const SearchPage = () => {
   };
 
   const handleMicClick = () => {
-    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-      setIsListening(!isListening);
-      
-      const SpeechRecognitionAPI = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-      const recognition = new SpeechRecognitionAPI();
-      
-      recognition.lang = 'en-US';
-      recognition.interimResults = false;
-      
-      recognition.onresult = (event: SpeechRecognitionEvent) => {
-        const transcript = event.results[0][0].transcript;
-        setSearchTerm(transcript);
-        setIsListening(false);
-      };
-      
-      recognition.onerror = () => {
-        setIsListening(false);
-      };
-      
-      recognition.onend = () => {
-        setIsListening(false);
-      };
-      
-      recognition.start();
-    } else {
-      alert("Speech recognition not supported in this browser.");
+    const started = startSpeechRecognition(
+      (text) => setSearchTerm(text),
+      (listening) => setIsListening(listening)
+    );
+    
+    if (!started) {
+      console.error("Speech recognition failed to start");
     }
   };
 
@@ -214,6 +175,11 @@ const SearchPage = () => {
             >
               <ArrowLeft size={20} />
             </button>
+            
+            {/* Flash effect overlay */}
+            {flashActive && (
+              <div className="absolute inset-0 bg-white animate-flash z-20"></div>
+            )}
           </div>
           
           {/* Camera View */}
@@ -225,6 +191,11 @@ const SearchPage = () => {
           />
           
           <canvas ref={canvasRef} className="hidden" />
+          
+          {/* Camera UI Overlay - Viewfinder */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="w-64 h-64 border-2 border-white rounded-lg"></div>
+          </div>
           
           {/* Camera Controls */}
           <div className="absolute bottom-0 left-0 right-0 p-8 flex justify-center">
@@ -279,7 +250,7 @@ const SearchPage = () => {
           {!showResults && (
             <div className="flex flex-col items-center justify-center flex-1 p-6">
               <div className="text-center mb-8">
-                <Camera size={50} className="mx-auto mb-4 text-google-blue" />
+                <Camera size={48} className="mx-auto mb-4 text-google-blue" />
                 <h2 className="text-xl font-medium mb-2">Search with your camera</h2>
                 <p className="text-gray-600">Take a photo or import an existing one</p>
               </div>
@@ -289,16 +260,16 @@ const SearchPage = () => {
                   onClick={handleCameraClick} 
                   className="bg-google-blue hover:bg-google-blue/90 text-white flex items-center justify-center py-6"
                 >
-                  <Camera className="mr-2" />
+                  <Camera className="mr-2 h-5 w-5" />
                   Use camera
                 </Button>
                 
                 <Button 
                   variant="outline" 
                   onClick={handleSelectGallery}
-                  className="flex items-center justify-center py-6"
+                  className="flex items-center justify-center py-6 border-gray-300"
                 >
-                  <Upload className="mr-2" />
+                  <Upload className="mr-2 h-5 w-5" />
                   Choose image
                 </Button>
                 
@@ -328,7 +299,7 @@ const SearchPage = () => {
                         />
                         <span className="text-green-700 text-sm">{result.url}</span>
                       </div>
-                      <h3 className="text-lg text-blue-700 mb-1">{result.title}</h3>
+                      <h3 className="text-lg text-blue-700 mb-1 font-normal">{result.title}</h3>
                       <p className="text-sm text-gray-600">{result.description}</p>
                     </div>
                   ))}
@@ -344,11 +315,11 @@ const SearchPage = () => {
           {/* Bottom Navigation */}
           <div className="fixed bottom-0 left-0 right-0 bg-white p-4 border-t flex justify-around">
             <div className="flex flex-col items-center text-google-blue">
-              <Search className="w-6 h-6" />
+              <Search className="w-5 h-5" />
               <span className="text-xs mt-1">Search</span>
             </div>
             <div className="flex flex-col items-center text-gray-500">
-              <Camera className="w-6 h-6" />
+              <Camera className="w-5 h-5" />
               <span className="text-xs mt-1">Lens</span>
             </div>
           </div>

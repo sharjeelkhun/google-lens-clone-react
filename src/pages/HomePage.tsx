@@ -4,32 +4,7 @@ import { useSearch } from "@/context/SearchContext";
 import { Search, Mic, Camera, User } from "lucide-react";
 import { newsArticles, discoverCards } from "@/data/mockSearchResults";
 import { useState } from "react";
-
-// Define the interface for the Web Speech API
-interface Window {
-  SpeechRecognition?: new () => SpeechRecognition;
-  webkitSpeechRecognition?: new () => SpeechRecognition;
-}
-
-interface SpeechRecognition extends EventTarget {
-  lang: string;
-  interimResults: boolean;
-  start: () => void;
-  stop: () => void;
-  onresult: (event: SpeechRecognitionEvent) => void;
-  onerror: (event: Event) => void;
-  onend: () => void;
-}
-
-interface SpeechRecognitionEvent {
-  results: {
-    [key: number]: {
-      [key: number]: {
-        transcript: string;
-      }
-    }
-  }
-}
+import { startSpeechRecognition } from "@/utils/speechRecognition";
 
 const HomePage = () => {
   const navigate = useNavigate();
@@ -48,32 +23,13 @@ const HomePage = () => {
   };
 
   const handleMicClick = () => {
-    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-      setIsListening(!isListening);
-      
-      const SpeechRecognitionAPI = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-      const recognition = new SpeechRecognitionAPI();
-      
-      recognition.lang = 'en-US';
-      recognition.interimResults = false;
-      
-      recognition.onresult = (event: SpeechRecognitionEvent) => {
-        const transcript = event.results[0][0].transcript;
-        setSearchTerm(transcript);
-        setIsListening(false);
-      };
-      
-      recognition.onerror = () => {
-        setIsListening(false);
-      };
-      
-      recognition.onend = () => {
-        setIsListening(false);
-      };
-      
-      recognition.start();
-    } else {
-      alert("Speech recognition not supported in this browser.");
+    const started = startSpeechRecognition(
+      (text) => setSearchTerm(text),
+      (listening) => setIsListening(listening)
+    );
+    
+    if (!started) {
+      console.error("Speech recognition failed to start");
     }
   };
 
@@ -81,7 +37,7 @@ const HomePage = () => {
     <div className="min-h-screen bg-white flex flex-col">
       {/* Header */}
       <header className="p-4 flex justify-between items-center">
-        <div className="text-google-dark-gray">All</div>
+        <div className="text-google-dark-gray text-sm font-medium">All</div>
         <div className="flex gap-4 items-center">
           {isSignedIn ? (
             <div className="w-8 h-8 rounded-full bg-google-blue text-white flex items-center justify-center">
@@ -99,14 +55,14 @@ const HomePage = () => {
       </header>
 
       {/* Google Logo */}
-      <div className="flex justify-center mt-8 mb-6">
+      <div className="flex justify-center mt-6 mb-5">
         <div className="flex items-center">
-          <span className="text-google-blue text-4xl font-medium">G</span>
-          <span className="text-google-red text-4xl font-medium">o</span>
-          <span className="text-google-yellow text-4xl font-medium">o</span>
-          <span className="text-google-blue text-4xl font-medium">g</span>
-          <span className="text-google-green text-4xl font-medium">l</span>
-          <span className="text-google-red text-4xl font-medium">e</span>
+          <span className="text-google-blue text-5xl font-normal">G</span>
+          <span className="text-google-red text-5xl font-normal">o</span>
+          <span className="text-google-yellow text-5xl font-normal">o</span>
+          <span className="text-google-blue text-5xl font-normal">g</span>
+          <span className="text-google-green text-5xl font-normal">l</span>
+          <span className="text-google-red text-5xl font-normal">e</span>
         </div>
       </div>
 
@@ -120,7 +76,7 @@ const HomePage = () => {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Search or type URL"
-              className="flex-1 bg-transparent"
+              className="flex-1 bg-transparent text-base"
             />
             <div className="flex items-center space-x-3">
               {isListening && (
@@ -184,15 +140,15 @@ const HomePage = () => {
       {/* Bottom Navigation */}
       <div className="fixed bottom-0 left-0 right-0 bg-white p-4 border-t flex justify-around">
         <div className="flex flex-col items-center text-google-blue">
-          <Search className="w-6 h-6" />
+          <Search className="w-5 h-5" />
           <span className="text-xs mt-1">Search</span>
         </div>
         <div className="flex flex-col items-center text-gray-500">
-          <Camera className="w-6 h-6" />
+          <Camera className="w-5 h-5" />
           <span className="text-xs mt-1">Lens</span>
         </div>
         <div className="flex flex-col items-center text-gray-500">
-          <User className="w-6 h-6" />
+          <User className="w-5 h-5" />
           <span className="text-xs mt-1">Profile</span>
         </div>
       </div>

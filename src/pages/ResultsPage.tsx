@@ -48,7 +48,7 @@ const ResultsPage = () => {
   return (
     <div className="min-h-screen bg-white flex flex-col">
       {/* Header */}
-      <header className="p-4 flex items-center space-x-3 border-b">
+      <header className="p-4 flex items-center space-x-3 border-b sticky top-0 bg-white z-10">
         <button onClick={() => navigate('/search')} className="flex-shrink-0">
           <ArrowLeft className="w-5 h-5 text-google-dark-gray" />
         </button>
@@ -67,11 +67,11 @@ const ResultsPage = () => {
 
       {/* Tabs */}
       <Tabs defaultValue="all" className="w-full">
-        <div className="overflow-x-auto">
+        <div className="sticky top-[65px] bg-white z-10">
           <TabsList className="p-0 bg-transparent border-b w-full justify-start px-2">
-            <TabsTrigger value="all" className="px-4 py-3 data-[state=active]:border-b-2 data-[state=active]:border-google-blue rounded-none data-[state=active]:shadow-none">All</TabsTrigger>
-            <TabsTrigger value="visual" className="px-4 py-3 data-[state=active]:border-b-2 data-[state=active]:border-google-blue rounded-none data-[state=active]:shadow-none">Visual matches</TabsTrigger>
-            <TabsTrigger value="shop" className="px-4 py-3 data-[state=active]:border-b-2 data-[state=active]:border-google-blue rounded-none data-[state=active]:shadow-none">Shopping</TabsTrigger>
+            <TabsTrigger value="all" className="px-4 py-3 data-[state=active]:border-b-2 data-[state=active]:border-google-blue rounded-none data-[state=active]:shadow-none text-sm font-medium">All</TabsTrigger>
+            <TabsTrigger value="visual" className="px-4 py-3 data-[state=active]:border-b-2 data-[state=active]:border-google-blue rounded-none data-[state=active]:shadow-none text-sm font-medium">Visual matches</TabsTrigger>
+            <TabsTrigger value="shop" className="px-4 py-3 data-[state=active]:border-b-2 data-[state=active]:border-google-blue rounded-none data-[state=active]:shadow-none text-sm font-medium">Shopping</TabsTrigger>
           </TabsList>
         </div>
 
@@ -113,11 +113,13 @@ const ResultsPage = () => {
               <div className="grid grid-cols-3 gap-3">
                 {visualMatches.map((item) => (
                   <div key={item.id} className="rounded-lg overflow-hidden">
-                    <img 
-                      src={item.imageUrl} 
-                      alt={item.title} 
-                      className="w-full h-32 object-cover"
-                    />
+                    <div className="bg-gray-100 h-32 overflow-hidden">
+                      <img 
+                        src={item.imageUrl} 
+                        alt={item.title} 
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
                     <p className="text-sm mt-1 line-clamp-2">{item.title}</p>
                     <p className="text-xs text-gray-500">{item.source}</p>
                   </div>
@@ -197,7 +199,7 @@ const ResultsPage = () => {
             <h2 className="text-lg font-medium mb-4">Shopping</h2>
             <div className="space-y-4">
               {shoppingResults.map((item) => (
-                <div key={item.id} className="flex border border-gray-200 rounded-lg overflow-hidden">
+                <div key={item.id} className="flex border border-gray-200 rounded-lg overflow-hidden shadow-sm">
                   <div className="w-24 h-24 flex-shrink-0 overflow-hidden">
                     <img 
                       src={item.imageUrl} 
@@ -220,15 +222,15 @@ const ResultsPage = () => {
       {/* Bottom Navigation */}
       <div className="fixed bottom-0 left-0 right-0 bg-white p-4 border-t flex justify-around">
         <div className="flex flex-col items-center text-google-blue">
-          <Search className="w-6 h-6" />
+          <Search className="w-5 h-5" />
           <span className="text-xs mt-1">Search</span>
         </div>
         <div className="flex flex-col items-center text-gray-500">
-          <Camera className="w-6 h-6" />
+          <Camera className="w-5 h-5" />
           <span className="text-xs mt-1">Lens</span>
         </div>
         <div className="flex flex-col items-center text-gray-500">
-          <MoreHorizontal className="w-6 h-6" />
+          <MoreHorizontal className="w-5 h-5" />
           <span className="text-xs mt-1">More</span>
         </div>
       </div>
