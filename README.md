@@ -1,73 +1,91 @@
-# Welcome to your Lovable project
 
-## Project info
+# Google Lens Clone with React & Capacitor
 
-**URL**: https://lovable.dev/projects/69a8b9fa-cbd8-4250-9cd5-00c70c1fa3cb
+This project is a pixel-perfect clone of Google's image search interface, built using React.js and Capacitor.
 
-## How can I edit this code?
+## Features
 
-There are several ways of editing your application.
+- **Google app Homepage** with search bar, sign-in functionality, and realtime feed
+- **Google Lens search** with text, voice, and camera input
+- **Full camera integration** for taking photos directly in the app
+- **Image upload** from gallery
+- **Search results display** with visual matches and shopping results
 
-**Use Lovable**
+## Getting Started
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/69a8b9fa-cbd8-4250-9cd5-00c70c1fa3cb) and start prompting.
+### Prerequisites
 
-Changes made via Lovable will be committed automatically to this repo.
+- Node.js 16+ and npm
 
-**Use your preferred IDE**
+### Installation
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+1. Clone the repository
+```bash
+git clone <repository-url>
+```
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+2. Install dependencies
+```bash
+npm install
+```
 
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+3. Start development server
+```bash
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+### Building for Mobile
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+1. Build the project
+```bash
+npm run build
+```
 
-**Use GitHub Codespaces**
+2. Add platforms
+```bash
+npx cap add android
+npx cap add ios
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+3. Sync the web code to the native projects
+```bash
+npx cap sync
+```
 
-## What technologies are used for this project?
+4. Open native IDEs
+```bash
+npx cap open android
+npx cap open ios
+```
 
-This project is built with:
+## Project Structure
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+- `/src/pages`: Main page components
+- `/src/components`: Reusable UI components
+- `/src/context`: React context for state management
+- `/src/data`: Mock data for search results
 
-## How can I deploy this project?
+## Implementation Notes
 
-Simply open [Lovable](https://lovable.dev/projects/69a8b9fa-cbd8-4250-9cd5-00c70c1fa3cb) and click on Share -> Publish.
+This clone carefully recreates the Google Lens experience with:
 
-## Can I connect a custom domain to my Lovable project?
+1. **Pixel-perfect UI** matching Google's design language
+2. **Interactive camera integration** using browser APIs
+3. **Responsive design** that works on all device sizes
+4. **Smooth animations** for a polished user experience
 
-Yes it is!
+## Deployment
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+The app can be deployed as a web application or compiled into native apps for Android and iOS using Capacitor.
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+## Built With
+
+- [React](https://reactjs.org/)
+- [Capacitor](https://capacitorjs.com/)
+- [TailwindCSS](https://tailwindcss.com/)
+- [Lucide React](https://lucide.dev/)
+- [shadcn/ui](https://ui.shadcn.com/)
+
+## License
+
+This project is for educational purposes only. Google and Google Lens are trademarks of Google LLC.
