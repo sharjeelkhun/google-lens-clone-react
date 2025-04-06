@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSearch } from "@/context/SearchContext";
-import { ArrowLeft, Camera, Search, Info, ShoppingBag, MoreHorizontal } from "lucide-react";
+import { ArrowLeft, Camera, Search, Info, ShoppingBag, MoreHorizontal, ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { fetchSearchResults, fetchImageSearchResults, SearchResponse } from "@/api/searchApi";
@@ -70,15 +70,12 @@ const ResultsPage = () => {
   return (
     <div className="min-h-screen bg-white flex flex-col">
       {/* Header */}
-      <header className="p-4 flex items-center space-x-3 border-b sticky top-0 bg-white z-10">
+      <header className="py-2 px-4 flex items-center space-x-3 border-b sticky top-0 bg-white z-10">
         <button onClick={() => navigate('/search')} className="flex-shrink-0">
-          <ArrowLeft className="w-5 h-5 text-google-dark-gray" />
+          <ChevronLeft className="w-5 h-5 text-google-dark-gray" />
         </button>
         
-        <div 
-          className="flex-1 bg-google-gray rounded-full px-4 py-2 flex items-center"
-          onClick={() => navigate('/search')}
-        >
+        <div className="flex-1 bg-google-gray rounded-full px-4 py-2 flex items-center text-sm">
           {searchTerm || "Search with image"}
         </div>
         
@@ -89,22 +86,37 @@ const ResultsPage = () => {
 
       {/* Tabs */}
       <Tabs value={currentTab} onValueChange={setCurrentTab} className="w-full">
-        <div className="sticky top-[65px] bg-white z-10">
-          <TabsList className="p-0 bg-transparent border-b w-full justify-start px-2">
-            <TabsTrigger value="all" className="px-4 py-3 data-[state=active]:border-b-2 data-[state=active]:border-google-blue rounded-none data-[state=active]:shadow-none text-sm font-medium">All</TabsTrigger>
-            <TabsTrigger value="visual" className="px-4 py-3 data-[state=active]:border-b-2 data-[state=active]:border-google-blue rounded-none data-[state=active]:shadow-none text-sm font-medium">Visual matches</TabsTrigger>
-            <TabsTrigger value="shop" className="px-4 py-3 data-[state=active]:border-b-2 data-[state=active]:border-google-blue rounded-none data-[state=active]:shadow-none text-sm font-medium">Shopping</TabsTrigger>
+        <div className="sticky top-[53px] bg-white z-10 border-b">
+          <TabsList className="p-0 bg-transparent w-full justify-start overflow-x-auto">
+            <TabsTrigger 
+              value="all" 
+              className="px-4 py-3 data-[state=active]:border-b-2 data-[state=active]:border-google-blue rounded-none data-[state=active]:shadow-none text-sm font-medium data-[state=active]:text-google-blue"
+            >
+              All
+            </TabsTrigger>
+            <TabsTrigger 
+              value="visual" 
+              className="px-4 py-3 data-[state=active]:border-b-2 data-[state=active]:border-google-blue rounded-none data-[state=active]:shadow-none text-sm font-medium data-[state=active]:text-google-blue"
+            >
+              Visual matches
+            </TabsTrigger>
+            <TabsTrigger 
+              value="shop" 
+              className="px-4 py-3 data-[state=active]:border-b-2 data-[state=active]:border-google-blue rounded-none data-[state=active]:shadow-none text-sm font-medium data-[state=active]:text-google-blue"
+            >
+              Shopping
+            </TabsTrigger>
           </TabsList>
         </div>
 
         {/* Main Content */}
-        <div className="px-4 py-3 overflow-y-auto pb-20">
+        <div className="px-4 py-3 overflow-y-auto pb-24">
           <TabsContent value="all" className="m-0">
             {/* Uploaded Image */}
             {searchImage.preview && (
               <div className="mb-6">
-                <p className="text-sm text-gray-500 mb-2">Your image</p>
-                <div className="max-w-[150px] h-auto rounded-lg overflow-hidden border border-gray-200">
+                <p className="text-xs text-gray-500 mb-2">Your image</p>
+                <div className="max-w-[120px] h-auto rounded-lg overflow-hidden border border-gray-200">
                   <img 
                     src={searchImage.preview} 
                     alt="Uploaded search" 
@@ -118,41 +130,64 @@ const ResultsPage = () => {
             {searchResults && searchResults[0] && (
               <div className="mb-6">
                 <h2 className="text-xl font-medium mb-2">{searchResults[0].title}</h2>
-                <p className="text-lg mb-2">{results.answer || searchResults[0].description}</p>
-                <p className="text-gray-600">{results.additionalInfo || ''}</p>
+                <p className="text-base mb-3 text-[#3c4043]">{results.answer || searchResults[0].description}</p>
+                {results.additionalInfo && (
+                  <p className="text-[#5f6368] text-sm mb-3">{results.additionalInfo}</p>
+                )}
                 
                 <Button 
                   variant="outline" 
-                  className="mt-3 text-google-blue border-google-blue"
+                  className="mt-1 text-google-blue border-google-blue rounded-full text-sm font-medium h-9"
                 >
-                  <Info size={16} className="mr-1" /> 
+                  <Info size={16} className="mr-2" /> 
                   Learn more
                 </Button>
+              </div>
+            )}
+
+            {/* Related Searches Pills */}
+            {results.relatedSearches && results.relatedSearches.length > 0 && (
+              <div className="mb-6">
+                <h3 className="text-base font-medium mb-3">Related searches</h3>
+                <div className="flex flex-wrap gap-2">
+                  {results.relatedSearches.map((item: string, index: number) => (
+                    <span 
+                      key={index}
+                      className="bg-[#f1f3f4] rounded-full px-4 py-2 text-sm text-[#3c4043]"
+                    >
+                      {item}
+                    </span>
+                  ))}
+                </div>
               </div>
             )}
 
             {/* Visual Matches */}
             {visualMatches && visualMatches.length > 0 && (
               <div className="mb-6">
-                <h3 className="text-lg font-medium mb-3">Visual matches</h3>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-base font-medium">Visual matches</h3>
+                </div>
                 <div className="grid grid-cols-3 gap-3">
-                  {visualMatches.map((item: any) => (
+                  {visualMatches.slice(0, 6).map((item: any) => (
                     <div key={item.id} className="rounded-lg overflow-hidden">
-                      <div className="bg-gray-100 h-32 overflow-hidden">
+                      <div className="bg-gray-50 h-28 overflow-hidden">
                         <img 
                           src={item.imageUrl} 
                           alt={item.title} 
                           className="w-full h-full object-cover"
                         />
                       </div>
-                      <p className="text-sm mt-1 line-clamp-2">{item.title}</p>
-                      <p className="text-xs text-gray-500">{item.source}</p>
+                      <p className="text-xs mt-1 line-clamp-2 text-[#202124]">{item.title}</p>
+                      <p className="text-[10px] text-[#70757a]">{item.source}</p>
                     </div>
                   ))}
                 </div>
-                <Button variant="ghost" className="mt-3 text-google-blue w-full">
-                  View more
-                </Button>
+                {visualMatches.length > 6 && (
+                  <Button variant="ghost" className="mt-3 text-google-blue w-full text-sm">
+                    View more
+                  </Button>
+                )}
               </div>
             )}
 
@@ -160,45 +195,30 @@ const ResultsPage = () => {
             {shoppingResults && shoppingResults.length > 0 && (
               <div className="mb-6">
                 <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-lg font-medium">Shopping</h3>
-                  <ShoppingBag size={18} className="text-google-dark-gray" />
+                  <h3 className="text-base font-medium">Shopping</h3>
+                  <ShoppingBag size={16} className="text-[#5f6368]" />
                 </div>
                 <div className="grid grid-cols-3 gap-3">
-                  {shoppingResults.map((item: any) => (
+                  {shoppingResults.slice(0, 6).map((item: any) => (
                     <div key={item.id} className="rounded-lg overflow-hidden">
-                      <div className="h-24 bg-gray-100 mb-1 flex items-center justify-center overflow-hidden">
+                      <div className="h-24 bg-gray-50 mb-1 flex items-center justify-center overflow-hidden">
                         <img 
                           src={item.imageUrl} 
                           alt={item.title} 
                           className="w-full h-full object-cover"
                         />
                       </div>
-                      <p className="text-sm line-clamp-1">{item.title}</p>
-                      <p className="text-sm font-medium">{item.price}</p>
-                      <p className="text-xs text-gray-500">{item.store}</p>
+                      <p className="text-xs line-clamp-1 text-[#202124]">{item.title}</p>
+                      <p className="text-xs font-medium text-[#202124]">{item.price}</p>
+                      <p className="text-[10px] text-[#70757a]">{item.store}</p>
                     </div>
                   ))}
                 </div>
-                <Button variant="ghost" className="mt-3 text-google-blue w-full">
-                  View more shopping results
-                </Button>
-              </div>
-            )}
-
-            {/* Related Searches */}
-            {results.relatedSearches && results.relatedSearches.length > 0 && (
-              <div className="mb-6">
-                <h3 className="text-lg font-medium mb-3">Related searches</h3>
-                <div className="flex flex-wrap gap-2">
-                  {results.relatedSearches.map((item: string, index: number) => (
-                    <span 
-                      key={index}
-                      className="bg-google-gray rounded-full px-4 py-2 text-sm"
-                    >
-                      {item}
-                    </span>
-                  ))}
-                </div>
+                {shoppingResults.length > 6 && (
+                  <Button variant="ghost" className="mt-3 text-google-blue w-full text-sm">
+                    View more shopping results
+                  </Button>
+                )}
               </div>
             )}
           </TabsContent>
@@ -208,7 +228,7 @@ const ResultsPage = () => {
             {visualMatches && visualMatches.length > 0 ? (
               <div className="grid grid-cols-2 gap-4">
                 {visualMatches.map((item: any) => (
-                  <div key={item.id} className="border border-gray-200 rounded-lg overflow-hidden">
+                  <div key={item.id} className="border border-gray-100 rounded-lg overflow-hidden shadow-sm">
                     <div className="h-36 overflow-hidden">
                       <img 
                         src={item.imageUrl} 
@@ -217,9 +237,9 @@ const ResultsPage = () => {
                       />
                     </div>
                     <div className="p-3">
-                      <h3 className="font-medium mb-1">{item.title}</h3>
-                      <p className="text-sm text-gray-600">{item.description}</p>
-                      <p className="text-xs text-gray-500 mt-1">{item.source}</p>
+                      <h3 className="font-medium text-sm mb-1">{item.title}</h3>
+                      <p className="text-xs text-[#5f6368]">{item.description}</p>
+                      <p className="text-[10px] text-[#70757a] mt-1">{item.source}</p>
                     </div>
                   </div>
                 ))}
@@ -234,8 +254,8 @@ const ResultsPage = () => {
             {shoppingResults && shoppingResults.length > 0 ? (
               <div className="space-y-4">
                 {shoppingResults.map((item: any) => (
-                  <div key={item.id} className="flex border border-gray-200 rounded-lg overflow-hidden shadow-sm">
-                    <div className="w-24 h-24 flex-shrink-0 overflow-hidden">
+                  <div key={item.id} className="flex border border-gray-100 rounded-lg overflow-hidden shadow-sm">
+                    <div className="w-24 h-24 flex-shrink-0 overflow-hidden bg-gray-50">
                       <img 
                         src={item.imageUrl} 
                         alt={item.title} 
@@ -243,9 +263,9 @@ const ResultsPage = () => {
                       />
                     </div>
                     <div className="p-3 flex-1">
-                      <h3 className="font-medium mb-1">{item.title}</h3>
-                      <p className="text-lg font-bold text-google-dark-gray">{item.price}</p>
-                      <p className="text-sm text-gray-500">{item.store}</p>
+                      <h3 className="font-medium text-sm mb-1">{item.title}</h3>
+                      <p className="text-base font-bold text-[#202124]">{item.price}</p>
+                      <p className="text-xs text-[#70757a]">{item.store}</p>
                     </div>
                   </div>
                 ))}
@@ -258,16 +278,16 @@ const ResultsPage = () => {
       </Tabs>
 
       {/* Bottom Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white p-4 border-t flex justify-around">
+      <div className="fixed bottom-0 left-0 right-0 bg-white pt-2 pb-1 px-6 border-t flex justify-around">
         <div className="flex flex-col items-center text-google-blue">
           <Search className="w-5 h-5" />
           <span className="text-xs mt-1">Search</span>
         </div>
-        <div className="flex flex-col items-center text-gray-500">
+        <div className="flex flex-col items-center text-[#5f6368]">
           <Camera className="w-5 h-5" />
           <span className="text-xs mt-1">Lens</span>
         </div>
-        <div className="flex flex-col items-center text-gray-500">
+        <div className="flex flex-col items-center text-[#5f6368]">
           <MoreHorizontal className="w-5 h-5" />
           <span className="text-xs mt-1">More</span>
         </div>

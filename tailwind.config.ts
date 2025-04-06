@@ -32,6 +32,15 @@ export default {
 					green: '#34A853',
 					gray: '#F1F3F4',
 					'dark-gray': '#5F6368',
+					'text': '#202124',
+					'secondary-text': '#70757a',
+					'result-bg': '#f8f9fa',
+					'divider': '#dadce0',
+					'surface': '#fff',
+					'light-blue': '#e8f0fe',
+					'light-green': '#e6f4ea',
+					'light-red': '#fce8e6',
+					'light-yellow': '#fef7e0'
 				},
 				primary: {
 					DEFAULT: 'hsl(var(--primary))',
