@@ -1,5 +1,6 @@
 
 import { createContext, useContext, useState, ReactNode, useCallback, useEffect } from 'react';
+import { fetchSearchResults } from '@/api/searchApi';
 
 type SearchImage = {
   file: File | null;
@@ -37,6 +38,7 @@ type SearchContextType = {
   updateSettings: (newSettings: Partial<SearchSettings>) => void;
   recentSearches: string[];
   trendingSearches: string[];
+  topSearches: string[];
 };
 
 const defaultSettings: SearchSettings = {
@@ -46,6 +48,18 @@ const defaultSettings: SearchSettings = {
   resultsPerPage: 10
 };
 
+// Trending searches - these would normally come from an API but we'll hardcode for now
+const initialTrendingSearches = [
+  'AI news', 
+  'vacation destinations', 
+  'new smartphones 2025', 
+  'remote work tips',
+  'sustainable fashion',
+  'electric vehicles',
+  'web development 2025',
+  'climate change solutions'
+];
+
 const SearchContext = createContext<SearchContextType | undefined>(undefined);
 
 export const SearchProvider = ({ children }: { children: ReactNode }) => {
@@ -54,15 +68,8 @@ export const SearchProvider = ({ children }: { children: ReactNode }) => {
   const [isListening, setIsListening] = useState(false);
   const [searchHistory, setSearchHistory] = useState<SearchHistory[]>([]);
   const [settings, setSettings] = useState<SearchSettings>(defaultSettings);
-  
-  // Sample trending searches
-  const [trendingSearches] = useState([
-    'AI news', 
-    'vacation destinations', 
-    'new smartphones 2025', 
-    'remote work tips',
-    'sustainable fashion'
-  ]);
+  const [trendingSearches, setTrendingSearches] = useState(initialTrendingSearches);
+  const [topSearches, setTopSearches] = useState<string[]>([]);
   
   // Load settings from localStorage on mount
   useEffect(() => {
@@ -89,7 +96,32 @@ export const SearchProvider = ({ children }: { children: ReactNode }) => {
         console.error('Failed to parse saved history:', e);
       }
     }
+    
+    // Simulate fetching trending searches from an API
+    fetchTopSearchTerms();
   }, []);
+  
+  // Simulated API call to fetch top search terms
+  const fetchTopSearchTerms = async () => {
+    try {
+      // In a real app, we would make an API call here
+      // For now, we'll use some hardcoded values
+      const mockTopSearches = [
+        'breaking news',
+        'weather forecast',
+        'stock market today',
+        'local restaurants',
+        'sports scores',
+        'movie reviews'
+      ];
+      
+      setTimeout(() => {
+        setTopSearches(mockTopSearches);
+      }, 1000);
+    } catch (error) {
+      console.error('Error fetching top search terms:', error);
+    }
+  };
   
   // Save settings to localStorage when they change
   useEffect(() => {
@@ -159,7 +191,8 @@ export const SearchProvider = ({ children }: { children: ReactNode }) => {
         settings,
         updateSettings,
         recentSearches,
-        trendingSearches
+        trendingSearches,
+        topSearches
       }}
     >
       {children}

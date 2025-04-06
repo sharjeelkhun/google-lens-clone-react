@@ -1,52 +1,47 @@
 
-// Define interface for the Web Speech API
-export interface SpeechRecognitionEvent {
-  results: {
-    [key: number]: {
-      [key: number]: {
-        transcript: string;
-        confidence: number;
-      }
-    }
-  }
-  resultIndex: number;
-}
-
-// Helper function to get speech recognition API
-export const getSpeechRecognition = () => {
-  if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-    return null;
-  }
-  
-  const SpeechRecognitionAPI = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-  return SpeechRecognitionAPI ? new SpeechRecognitionAPI() : null;
-};
-
-// Start speech recognition with callback for result
+// Simple wrapper for the Web Speech API
 export const startSpeechRecognition = (
-  onResult: (text: string) => void,
-  onListeningChange: (isListening: boolean) => void,
-  options = { continuous: false, interimResults: true, language: 'en-US' }
+  onResultCallback: (text: string) => void,
+  onListeningCallback: (isListening: boolean) => void,
+  options: {
+    continuous?: boolean,
+    interimResults?: boolean,
+    language?: string
+  } = {}
 ) => {
-  const recognition = getSpeechRecognition();
-  
-  if (!recognition) {
-    console.error("Speech recognition not supported in this browser.");
+  // Check browser support
+  if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+    console.error('Speech recognition not supported in this browser');
     return false;
   }
-  
-  // Configure recognition
-  recognition.lang = options.language;
-  recognition.continuous = options.continuous;
-  recognition.interimResults = options.interimResults;
-  
-  // Handle interim results for real-time feedback
-  let finalTranscript = '';
-  
-  recognition.onresult = (event: SpeechRecognitionEvent) => {
+
+  // Set default options
+  const settings = {
+    continuous: options.continuous ?? false,
+    interimResults: options.interimResults ?? true,
+    language: options.language ?? 'en-US'
+  };
+
+  // Initialize speech recognition
+  const SpeechRecognition = window.webkitSpeechRecognition || window.SpeechRecognition;
+  const recognition = new SpeechRecognition();
+
+  // Configure
+  recognition.continuous = settings.continuous;
+  recognition.interimResults = settings.interimResults;
+  recognition.lang = settings.language;
+
+  // Event handlers
+  recognition.onstart = () => {
+    onListeningCallback(true);
+  };
+
+  recognition.onresult = (event: any) => {
     let interimTranscript = '';
-    
-    for (let i = event.resultIndex; i < event.results.length; ++i) {
+    let finalTranscript = '';
+
+    // Handle results
+    for (let i = event.resultIndex; i < event.results.length; i++) {
       const transcript = event.results[i][0].transcript;
       
       if (event.results[i].isFinal) {
@@ -55,66 +50,37 @@ export const startSpeechRecognition = (
         interimTranscript += transcript;
       }
     }
-    
-    // Send interim results for real-time updates
-    if (interimTranscript) {
-      onResult(finalTranscript + interimTranscript);
-    }
-    
-    // If we have final results, use those
-    if (finalTranscript) {
-      onResult(finalTranscript);
-      if (!options.continuous) {
-        recognition.stop();
-        onListeningChange(false);
-      }
+
+    // Use final or interim results
+    const resultText = finalTranscript || interimTranscript;
+    if (resultText) {
+      onResultCallback(resultText);
     }
   };
-  
+
   recognition.onerror = (event: any) => {
-    console.error("Speech recognition error:", event.error);
-    onListeningChange(false);
+    console.error('Speech recognition error', event.error);
+    onListeningCallback(false);
   };
-  
+
   recognition.onend = () => {
-    // Only change listening state if we have a final result or there's an error
-    // This prevents the microphone icon from flickering during brief pauses
-    if (!options.continuous) {
-      onListeningChange(false);
-    }
+    onListeningCallback(false);
   };
-  
-  recognition.start();
-  onListeningChange(true);
-  return true;
-};
 
-// Helper to check if the browser supports speech synthesis
-export const getSpeechSynthesis = () => {
-  return 'speechSynthesis' in window ? window.speechSynthesis : null;
-};
-
-// Speak text out loud
-export const speakText = (text: string, options = { voice: null, rate: 1, pitch: 1 }) => {
-  const synthesis = getSpeechSynthesis();
-  
-  if (!synthesis) {
-    console.error("Speech synthesis not supported in this browser.");
+  // Start listening
+  try {
+    recognition.start();
+    return true;
+  } catch (error) {
+    console.error('Failed to start speech recognition:', error);
     return false;
   }
-  
-  // Create utterance
-  const utterance = new SpeechSynthesisUtterance(text);
-  
-  // Configure utterance
-  utterance.rate = options.rate;
-  utterance.pitch = options.pitch;
-  
-  if (options.voice) {
-    utterance.voice = options.voice;
-  }
-  
-  // Speak
-  synthesis.speak(utterance);
-  return true;
 };
+
+// Type definitions to help TypeScript
+declare global {
+  interface Window {
+    webkitSpeechRecognition: any;
+    SpeechRecognition: any;
+  }
+}

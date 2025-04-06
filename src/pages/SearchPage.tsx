@@ -176,7 +176,11 @@ const SearchPage = () => {
     const started = startSpeechRecognition(
       (text) => setSearchTerm(text),
       (listening) => setIsListening(listening),
-      { interimResults: true }
+      { 
+        continuous: false,
+        interimResults: true,
+        language: 'en-US'
+      }
     );
     
     if (!started) {
