@@ -1,5 +1,5 @@
 
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 
 export type SearchOptions = {
   query: string;
@@ -41,18 +41,13 @@ export type SearchResponse = {
   additionalInfo?: string;
 };
 
-// Using SerpAPI for search results
-// Fallback to mock data if API call fails or limits are reached
+// Using Wikipedia API as a free alternative that allows CORS
 export const fetchSearchResults = async (options: SearchOptions): Promise<SearchResponse> => {
   const { query, type = 'web', numberOfResults = 10 } = options;
   
   try {
-    // For demonstration purposes, we'll use the public API key
-    // In a production app, this would be stored in a server environment variable
-    const apiKey = 'demo'; // SerpAPI provides a demo key with limited functionality
-    
-    // Construct the API URL with appropriate parameters
-    const url = `https://serpapi.com/search.json?engine=google&q=${encodeURIComponent(query)}&api_key=${apiKey}`;
+    // Use Wikipedia API which allows CORS and is free
+    const url = `https://en.wikipedia.org/w/api.php?origin=*&action=query&list=search&srsearch=${encodeURIComponent(query)}&format=json&srlimit=${numberOfResults}`;
     
     console.log('Fetching search results from:', url);
     
@@ -64,13 +59,13 @@ export const fetchSearchResults = async (options: SearchOptions): Promise<Search
     
     const data = await response.json();
     
-    // Transform the API response into our app's format
-    return transformApiResponse(data, type);
+    // Transform Wikipedia API response to our app's format
+    return transformWikipediaResponse(data, query);
   } catch (error) {
     console.error('Error fetching search results:', error);
     toast({
       title: "Search API Error",
-      description: "Using fallback search results. API might be unavailable or rate-limited.",
+      description: "Using fallback search results. API might be unavailable.",
       variant: "destructive"
     });
     
@@ -114,73 +109,45 @@ const fileToBase64 = (file: File): Promise<string> => {
   });
 };
 
-// Transform API response to our app's format
-const transformApiResponse = (apiResponse: any, type: 'web' | 'image'): SearchResponse => {
-  if (type === 'web' && apiResponse.organic_results) {
-    // Extract search results
-    const searchResults: SearchResult[] = apiResponse.organic_results.map((result: any) => ({
-      title: result.title || 'Search Result',
-      link: result.link || 'https://example.com',
-      description: result.snippet || 'No description available',
-      favicon: result.favicon || 'https://www.google.com/favicon.ico',
-      source: result.displayed_link || 'example.com'
-    }));
+// Transform Wikipedia API response to our app's format
+const transformWikipediaResponse = (apiResponse: any, query: string): SearchResponse => {
+  if (apiResponse.query && apiResponse.query.search) {
+    // Extract search results from Wikipedia
+    const searchResults: SearchResult[] = apiResponse.query.search.map((result: any) => {
+      // Strip HTML tags from snippet
+      const plainTextSnippet = result.snippet.replace(/<\/?[^>]+(>|$)/g, "");
+      
+      return {
+        title: result.title || 'Wikipedia Result',
+        link: `https://en.wikipedia.org/wiki/${encodeURIComponent(result.title)}`,
+        description: plainTextSnippet || 'No description available',
+        favicon: 'https://en.wikipedia.org/static/favicon/wikipedia.ico',
+        source: 'Wikipedia',
+        date: new Date(result.timestamp).toLocaleDateString()
+      };
+    });
     
-    // Extract related searches if available
-    const relatedSearches = apiResponse.related_searches?.map((item: any) => item.query) || [];
-    
-    // Extract featured snippet if available
-    let answer = '';
-    let additionalInfo = '';
-    if (apiResponse.answer_box) {
-      answer = apiResponse.answer_box.answer || apiResponse.answer_box.snippet || '';
-      additionalInfo = apiResponse.answer_box.snippet || '';
-    }
+    // Generate related searches based on the query
+    const relatedSearches = generateRelatedSearches(query);
     
     // Return structured data
     return {
       searchResults,
       relatedSearches,
-      answer,
-      additionalInfo,
-      // If there are image results, include them
-      visualMatches: extractVisualMatches(apiResponse),
-      // If there are shopping results, include them
-      shoppingResults: extractShoppingResults(apiResponse),
+      // For Wikipedia, we don't have these features but could add them later
+      visualMatches: [],
+      shoppingResults: [],
     };
   }
   
-  if (type === 'image') {
-    // For image search, return mock data
-    return getMockImageSearchResults();
-  }
-  
   // Default fallback to mock data
-  return getMockSearchResults(type);
+  return getMockSearchResults('web');
 };
 
-// Helper function to extract visual matches from API response
-const extractVisualMatches = (apiResponse: any): ImageSearchResult[] => {
-  const imageResults = apiResponse.images_results || [];
-  return imageResults.slice(0, 6).map((img: any) => ({
-    title: img.title || 'Image result',
-    link: img.link || img.original || '#',
-    source: img.source || 'Google Images',
-    imageUrl: img.thumbnail || img.original || 'https://via.placeholder.com/150',
-    description: img.snippet || ''
-  }));
-};
-
-// Helper function to extract shopping results from API response
-const extractShoppingResults = (apiResponse: any): ShoppingResult[] => {
-  const shoppingResults = apiResponse.shopping_results || [];
-  return shoppingResults.slice(0, 6).map((item: any) => ({
-    title: item.title || 'Product',
-    link: item.link || '#',
-    price: item.price || 'N/A',
-    store: item.source || 'Online Store',
-    imageUrl: item.thumbnail || 'https://via.placeholder.com/150'
-  }));
+// Helper function to generate related searches based on the query
+const generateRelatedSearches = (query: string): string[] => {
+  const baseTerms = ['what is', 'how to', 'history of', 'facts about', 'examples of'];
+  return baseTerms.map(term => `${term} ${query}`).slice(0, 5);
 };
 
 // Helper function to get mock search results
