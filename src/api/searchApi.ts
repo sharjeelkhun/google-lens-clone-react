@@ -41,26 +41,25 @@ export type SearchResponse = {
   additionalInfo?: string;
 };
 
-// Using a free API from https://serpapi.com (you get 100 free searches per month)
+// Using SerpAPI for search results
 // Fallback to mock data if API call fails or limits are reached
 export const fetchSearchResults = async (options: SearchOptions): Promise<SearchResponse> => {
   const { query, type = 'web', numberOfResults = 10 } = options;
-
-  // API key would normally be stored in an environment variable
-  // For this demo, we'll use a public API that doesn't require a key
+  
   try {
-    const baseUrl = 'https://serpapi.com/search.json';
-    const url = new URL('https://serpapi.com/search');
-    url.searchParams.append('engine', 'google');
-    url.searchParams.append('q', query);
-    url.searchParams.append('num', numberOfResults.toString());
+    // For demonstration purposes, we'll use the public API key
+    // In a production app, this would be stored in a server environment variable
+    const apiKey = 'demo'; // SerpAPI provides a demo key with limited functionality
     
-    // For demo purposes, we'll use this API that doesn't require authentication
-    // But it has limited functionality - consider using a free API key with SerpAPI
-    const response = await fetch(`https://serpapi.com/search.json?engine=google&q=${encodeURIComponent(query)}&api_key=demo`);
+    // Construct the API URL with appropriate parameters
+    const url = `https://serpapi.com/search.json?engine=google&q=${encodeURIComponent(query)}&api_key=${apiKey}`;
+    
+    console.log('Fetching search results from:', url);
+    
+    const response = await fetch(url);
     
     if (!response.ok) {
-      throw new Error('Search API request failed');
+      throw new Error(`Search API request failed with status: ${response.status}`);
     }
     
     const data = await response.json();
@@ -76,9 +75,7 @@ export const fetchSearchResults = async (options: SearchOptions): Promise<Search
     });
     
     // Fallback to mock data
-    return import('@/data/mockSearchResults').then(module => {
-      return type === 'image' ? module.mockImageSearchResults : { searchResults: module.mockTextSearchResults };
-    });
+    return getMockSearchResults(type);
   }
 };
 
@@ -88,14 +85,12 @@ export const fetchImageSearchResults = async (imageFile: File): Promise<SearchRe
     // Convert image to base64 for API submission
     const base64Image = await fileToBase64(imageFile);
     
-    // In a real implementation, you would upload this to a service like Google Lens API
+    // In a real implementation, you would upload this to Google Lens API
     // For now, we'll simulate with a delay and return mock data
     await new Promise(resolve => setTimeout(resolve, 1500));
     
-    // Fallback to mock data
-    return import('@/data/mockSearchResults').then(module => {
-      return module.mockImageSearchResults;
-    });
+    // Fallback to mock image search data
+    return getMockImageSearchResults();
   } catch (error) {
     console.error('Error in image search:', error);
     toast({
@@ -105,9 +100,7 @@ export const fetchImageSearchResults = async (imageFile: File): Promise<SearchRe
     });
     
     // Fallback to mock data
-    return import('@/data/mockSearchResults').then(module => {
-      return module.mockImageSearchResults;
-    });
+    return getMockImageSearchResults();
   }
 };
 
@@ -123,17 +116,14 @@ const fileToBase64 = (file: File): Promise<string> => {
 
 // Transform API response to our app's format
 const transformApiResponse = (apiResponse: any, type: 'web' | 'image'): SearchResponse => {
-  // For demo purposes, we'll still fallback to mock data
-  // In a real implementation, you would parse the API response
-  
-  if (apiResponse.organic_results && type === 'web') {
-    const searchResults = apiResponse.organic_results.map((result: any) => ({
-      id: Math.random().toString(36).substring(2),
+  if (type === 'web' && apiResponse.organic_results) {
+    // Extract search results
+    const searchResults: SearchResult[] = apiResponse.organic_results.map((result: any) => ({
       title: result.title || 'Search Result',
       link: result.link || 'https://example.com',
       description: result.snippet || 'No description available',
       favicon: result.favicon || 'https://www.google.com/favicon.ico',
-      url: result.displayed_link || 'example.com'
+      source: result.displayed_link || 'example.com'
     }));
     
     // Extract related searches if available
@@ -147,22 +137,97 @@ const transformApiResponse = (apiResponse: any, type: 'web' | 'image'): SearchRe
       additionalInfo = apiResponse.answer_box.snippet || '';
     }
     
+    // Return structured data
     return {
       searchResults,
       relatedSearches,
       answer,
-      additionalInfo
+      additionalInfo,
+      // If there are image results, include them
+      visualMatches: extractVisualMatches(apiResponse),
+      // If there are shopping results, include them
+      shoppingResults: extractShoppingResults(apiResponse),
     };
   }
   
   if (type === 'image') {
-    // For image search, we would parse image results
-    // Fallback to mock data for now
-    return import('@/data/mockSearchResults').then(module => module.mockImageSearchResults);
+    // For image search, return mock data
+    return getMockImageSearchResults();
   }
   
-  // Fallback to mock data
-  return import('@/data/mockSearchResults').then(module => {
-    return type === 'image' ? module.mockImageSearchResults : { searchResults: module.mockTextSearchResults };
-  });
+  // Default fallback to mock data
+  return getMockSearchResults(type);
+};
+
+// Helper function to extract visual matches from API response
+const extractVisualMatches = (apiResponse: any): ImageSearchResult[] => {
+  const imageResults = apiResponse.images_results || [];
+  return imageResults.slice(0, 6).map((img: any) => ({
+    title: img.title || 'Image result',
+    link: img.link || img.original || '#',
+    source: img.source || 'Google Images',
+    imageUrl: img.thumbnail || img.original || 'https://via.placeholder.com/150',
+    description: img.snippet || ''
+  }));
+};
+
+// Helper function to extract shopping results from API response
+const extractShoppingResults = (apiResponse: any): ShoppingResult[] => {
+  const shoppingResults = apiResponse.shopping_results || [];
+  return shoppingResults.slice(0, 6).map((item: any) => ({
+    title: item.title || 'Product',
+    link: item.link || '#',
+    price: item.price || 'N/A',
+    store: item.source || 'Online Store',
+    imageUrl: item.thumbnail || 'https://via.placeholder.com/150'
+  }));
+};
+
+// Helper function to get mock search results
+const getMockSearchResults = (type: 'web' | 'image'): SearchResponse => {
+  if (type === 'image') {
+    return getMockImageSearchResults();
+  }
+  
+  // Import the mock data and return formatted response
+  return {
+    searchResults: getMockTextSearchResults(),
+    relatedSearches: [
+      "google search api",
+      "serpapi alternative",
+      "free search api",
+      "google custom search",
+      "search engine api"
+    ]
+  };
+};
+
+// Helper function to get mock image search results
+const getMockImageSearchResults = (): SearchResponse => {
+  // Import the mock image search data
+  const mockData = require('@/data/mockSearchResults').mockImageSearchResults;
+  
+  // Ensure the data conforms to our SearchResponse type
+  return {
+    searchResults: mockData.searchResults.map((item: any): SearchResult => ({
+      title: item.title || '',
+      link: '#',
+      description: item.additionalInfo || item.answer || '',
+    })),
+    visualMatches: mockData.visualMatches,
+    shoppingResults: mockData.shoppingResults,
+    relatedSearches: [
+      "similar images", 
+      "visual search", 
+      "image recognition",
+      "reverse image search"
+    ],
+    answer: mockData.searchResults[0]?.answer || '',
+    additionalInfo: mockData.searchResults[0]?.additionalInfo || ''
+  };
+};
+
+// Helper function to get mock text search results
+const getMockTextSearchResults = (): SearchResult[] => {
+  return require('@/data/mockSearchResults').mockTextSearchResults;
 };
