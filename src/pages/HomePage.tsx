@@ -1,363 +1,254 @@
 
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Camera, Search, Grid, ArrowRight, LogIn, Bell, ChevronDown, User, ChevronRight, Newspaper, CloudRain, Compass, Flame, ShoppingBag } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { useSearch } from "@/context/SearchContext";
-import { Search, Mic, Camera, User, Grid, Settings, Bookmark, Calendar, Bell, MapPin } from "lucide-react";
-import { newsArticles, discoverCards } from "@/data/mockSearchResults";
-import { useState, useEffect } from "react";
-import { startSpeechRecognition } from "@/utils/speechRecognition";
 import { motion } from "framer-motion";
-import { cn } from "@/lib/utils";
-import { Avatar } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Card } from "@/components/ui/card";
 
 const HomePage = () => {
   const navigate = useNavigate();
-  const { searchTerm, setSearchTerm, isListening, setIsListening } = useSearch();
+  const { topSearches } = useSearch();
   const [isSignedIn, setIsSignedIn] = useState(false);
-  const [currentDateTime, setCurrentDateTime] = useState(new Date());
-  const [showNotificationBadge, setShowNotificationBadge] = useState(true);
-  const [weatherData, setWeatherData] = useState({ temp: "23°", condition: "Sunny" });
+  const [showSignInModal, setShowSignInModal] = useState(false);
 
-  // Update current time
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentDateTime(new Date());
-    }, 60000); // Update every minute
-
-    return () => clearInterval(timer);
-  }, []);
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchTerm.trim()) {
-      navigate('/results');
-    }
+  const handleSearchClick = () => {
+    navigate('/search');
   };
 
   const handleCameraClick = () => {
     navigate('/search', { state: { openCamera: true } });
   };
 
-  const handleMicClick = () => {
-    const started = startSpeechRecognition(
-      (text) => setSearchTerm(text),
-      (listening) => setIsListening(listening)
-    );
-    
-    if (!started) {
-      console.error("Speech recognition failed to start");
+  const handleSignIn = () => {
+    setIsSignedIn(true);
+    setShowSignInModal(false);
+  };
+
+  const weatherData = {
+    temperature: "24°",
+    condition: "Partly Cloudy",
+    location: "San Francisco"
+  };
+
+  const newsItems = [
+    {
+      id: 1,
+      title: "Tech innovations driving sustainable energy solutions",
+      source: "Tech Today",
+      timeAgo: "2 hours ago",
+      imageUrl: "https://picsum.photos/seed/news1/200/200"
+    },
+    {
+      id: 2,
+      title: "New AI breakthroughs in healthcare announced",
+      source: "Science Daily",
+      timeAgo: "5 hours ago",
+      imageUrl: "https://picsum.photos/seed/news2/200/200"
+    },
+    {
+      id: 3,
+      title: "Global markets respond to economic policy changes",
+      source: "Finance Report",
+      timeAgo: "8 hours ago",
+      imageUrl: "https://picsum.photos/seed/news3/200/200"
     }
-  };
-
-  // Animation variants
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: { 
-      opacity: 1,
-      transition: { 
-        staggerChildren: 0.1
-      }
-    }
-  };
-
-  const itemVariants = {
-    hidden: { y: 20, opacity: 0 },
-    visible: { y: 0, opacity: 1, transition: { type: "spring", stiffness: 100 } }
-  };
-
-  const formatDate = (date: Date) => {
-    const options: Intl.DateTimeFormatOptions = { 
-      weekday: 'long', 
-      month: 'short', 
-      day: 'numeric' 
-    };
-    return date.toLocaleDateString('en-US', options);
-  };
+  ];
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
-      {/* Header */}
-      <motion.header 
-        className="p-4 flex justify-between items-center"
-        initial={{ y: -20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.4 }}
-      >
-        <div className="flex space-x-4">
-          <span className="text-sm font-medium text-google-blue">All</span>
-          <span className="text-sm text-gray-500">Images</span>
-        </div>
-
+      {/* Header with Account */}
+      <header className="p-4 flex items-center justify-between sticky top-0 bg-white z-10 border-b">
         <div className="flex items-center">
-          {weatherData && (
-            <div className="mr-4 flex items-center text-sm">
-              <span className="font-medium">{weatherData.temp}</span>
-              <span className="ml-1 text-gray-500">{weatherData.condition}</span>
-            </div>
-          )}
-          
-          <div className="flex gap-4 items-center">
-            <button className="p-2 rounded-full hover:bg-gray-100 transition-colors">
-              <Grid className="w-5 h-5 text-gray-600" />
-            </button>
-            <button className="p-2 rounded-full hover:bg-gray-100 relative">
-              {showNotificationBadge && (
-                <Badge className="absolute -top-1 -right-1 w-2 h-2 p-0 bg-google-red" />
-              )}
-              <Bell className="w-5 h-5 text-gray-600" />
-            </button>
-            <button className="p-2 rounded-full hover:bg-gray-100">
-              <Settings className="w-5 h-5 text-gray-600" />
-            </button>
-            
-            {isSignedIn ? (
-              <motion.div 
-                whileHover={{ scale: 1.05 }}
-                className="w-8 h-8 rounded-full bg-google-blue text-white flex items-center justify-center"
-              >
-                U
-              </motion.div>
-            ) : (
-              <motion.button 
-                className="text-google-blue font-medium px-6 py-2 rounded-md hover:bg-blue-50 transition-colors"
-                onClick={() => setIsSignedIn(true)}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                Sign in
-              </motion.button>
-            )}
-          </div>
+          <span className="text-xl font-medium text-google-blue">Google</span>
         </div>
-      </motion.header>
+        
+        {isSignedIn ? (
+          <Avatar className="h-8 w-8 cursor-pointer">
+            <AvatarImage src="https://github.com/shadcn.png" alt="@user" />
+            <AvatarFallback>U</AvatarFallback>
+          </Avatar>
+        ) : (
+          <Button 
+            variant="outline" 
+            className="text-google-blue border-google-blue text-sm h-8"
+            onClick={() => setShowSignInModal(true)}
+          >
+            <LogIn className="w-4 h-4 mr-1" />
+            Sign in
+          </Button>
+        )}
+      </header>
 
-      {/* Date Display */}
-      <motion.div 
-        className="px-4 py-2 text-center"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.2 }}
-      >
-        <p className="text-sm text-gray-500">{formatDate(currentDateTime)}</p>
-      </motion.div>
-
-      {/* Google Logo */}
-      <motion.div 
-        className="flex justify-center mt-16 mb-6"
-        initial={{ scale: 0.8, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        transition={{ type: "spring", stiffness: 100, delay: 0.3 }}
-      >
-        <div className="flex items-center">
-          <span className="text-google-blue text-7xl font-normal">G</span>
-          <span className="text-google-red text-7xl font-normal">o</span>
-          <span className="text-google-yellow text-7xl font-normal">o</span>
-          <span className="text-google-blue text-7xl font-normal">g</span>
-          <span className="text-google-green text-7xl font-normal">l</span>
-          <span className="text-google-red text-7xl font-normal">e</span>
+      {/* Main Content */}
+      <div className="flex-1 p-4 overflow-auto pb-20">
+        {/* Google Logo */}
+        <div className="flex justify-center my-6">
+          <svg viewBox="0 0 272 92" width="160" height="54">
+            <path fill="#EA4335" d="M115.75 47.18c0 12.77-9.99 22.18-22.25 22.18s-22.25-9.41-22.25-22.18C71.25 34.32 81.24 25 93.5 25s22.25 9.32 22.25 22.18zm-9.74 0c0-7.98-5.79-13.44-12.51-13.44S80.99 39.2 80.99 47.18c0 7.9 5.79 13.44 12.51 13.44s12.51-5.55 12.51-13.44z" />
+            <path fill="#FBBC05" d="M163.75 47.18c0 12.77-9.99 22.18-22.25 22.18s-22.25-9.41-22.25-22.18c0-12.85 9.99-22.18 22.25-22.18s22.25 9.32 22.25 22.18zm-9.74 0c0-7.98-5.79-13.44-12.51-13.44s-12.51 5.46-12.51 13.44c0 7.9 5.79 13.44 12.51 13.44s12.51-5.55 12.51-13.44z" />
+            <path fill="#4285F4" d="M209.75 26.34v39.82c0 16.38-9.66 23.07-21.08 23.07-10.75 0-17.22-7.19-19.66-13.07l8.48-3.53c1.51 3.61 5.21 7.87 11.17 7.87 7.31 0 11.84-4.51 11.84-13v-3.19h-.34c-2.18 2.69-6.38 5.04-11.68 5.04-11.09 0-21.25-9.66-21.25-22.09 0-12.52 10.16-22.26 21.25-22.26 5.29 0 9.49 2.35 11.68 4.96h.34v-3.61h9.25zm-8.56 20.92c0-7.81-5.21-13.52-11.84-13.52-6.72 0-12.35 5.71-12.35 13.52 0 7.73 5.63 13.36 12.35 13.36 6.63 0 11.84-5.63 11.84-13.36z" />
+            <path fill="#34A853" d="M225 3v65h-9.5V3h9.5z" />
+            <path fill="#EA4335" d="M262.02 54.48l7.56 5.04c-2.44 3.61-8.32 9.83-18.48 9.83-12.6 0-22.01-9.74-22.01-22.18 0-13.19 9.49-22.18 20.92-22.18 11.51 0 17.14 9.16 18.98 14.11l1.01 2.52-29.65 12.28c2.27 4.45 5.8 6.72 10.75 6.72 4.96 0 8.4-2.44 10.92-6.14zm-23.27-7.98l19.82-8.23c-1.09-2.77-4.37-4.7-8.23-4.7-4.95 0-11.84 4.37-11.59 12.93z" />
+            <path fill="#4285F4" d="M35.29 41.41V32H67c.31 1.64.47 3.58.47 5.68 0 7.06-1.93 15.79-8.15 22.01-6.05 6.3-13.78 9.66-24.02 9.66C16.32 69.35.36 53.89.36 34.91.36 15.93 16.32.47 35.3.47c10.5 0 17.98 4.12 23.6 9.49l-6.64 6.64c-4.03-3.78-9.49-6.72-16.97-6.72-13.86 0-24.7 11.17-24.7 25.03 0 13.86 10.84 25.03 24.7 25.03 8.99 0 14.11-3.61 17.39-6.89 2.66-2.66 4.41-6.46 5.1-11.65l-22.49.01z" />
+          </svg>
         </div>
-      </motion.div>
 
-      {/* Search Bar */}
-      <div className="px-4 mb-6">
-        <motion.form 
-          onSubmit={handleSearch} 
-          className="relative max-w-2xl mx-auto"
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.4 }}
+        {/* Search Bar */}
+        <div 
+          className="bg-white mx-4 flex items-center px-4 py-3 rounded-full border shadow-sm mb-8"
+          onClick={handleSearchClick}
         >
-          <div className="search-bar-container rounded-full border shadow-sm hover:shadow-md transition-shadow">
-            <Search className="text-google-dark-gray w-5 h-5 mr-3" />
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search Google or type a URL"
-              className="flex-1 bg-transparent text-base"
-              onClick={() => navigate('/search')}
-            />
-            <div className="flex items-center space-x-3">
-              {isListening && (
-                <motion.div 
-                  className="w-4 h-4 rounded-full bg-google-blue mr-1"
-                  animate={{ 
-                    opacity: [0.5, 1, 0.5],
-                    scale: [1, 1.1, 1]
-                  }}
-                  transition={{ 
-                    repeat: Infinity,
-                    duration: 1.5
-                  }}
-                ></motion.div>
-              )}
-              <button 
-                type="button" 
-                onClick={handleMicClick}
-                className="hover:bg-gray-100 p-2 rounded-full transition-colors"
-              >
-                <Mic className="w-5 h-5 text-google-dark-gray" />
-              </button>
-              <button 
-                type="button" 
-                onClick={handleCameraClick}
-                className="hover:bg-gray-100 p-2 rounded-full transition-colors"
-              >
-                <Camera className="w-5 h-5 text-google-dark-gray" />
-              </button>
-            </div>
+          <Search className="text-gray-500 mr-3 w-5 h-5" />
+          <span className="text-gray-500 flex-1">Search or type URL</span>
+          <div className="flex space-x-2">
+            <button onClick={(e) => {
+              e.stopPropagation();
+              handleCameraClick();
+            }}>
+              <Camera className="text-google-blue w-5 h-5" />
+            </button>
           </div>
-        </motion.form>
+        </div>
+
+        {/* Weather Card */}
+        <div className="mb-6">
+          <Card className="p-4">
+            <div className="flex justify-between items-center">
+              <div>
+                <h3 className="font-medium">{weatherData.location}</h3>
+                <p className="text-sm text-gray-500">{weatherData.condition}</p>
+              </div>
+              <div className="flex items-center">
+                <CloudRain className="w-6 h-6 text-blue-500 mr-2" />
+                <span className="text-2xl font-semibold">{weatherData.temperature}</span>
+              </div>
+            </div>
+          </Card>
+        </div>
+
+        {/* Discover Section */}
+        <div className="mb-6">
+          <h2 className="text-lg font-medium mb-3">Discover</h2>
+          <div className="grid grid-cols-4 gap-4">
+            {[
+              { icon: <Flame className="w-5 h-5" />, name: "Trending" },
+              { icon: <ShoppingBag className="w-5 h-5" />, name: "Shopping" },
+              { icon: <Newspaper className="w-5 h-5" />, name: "News" },
+              { icon: <Compass className="w-5 h-5" />, name: "Maps" }
+            ].map((item, idx) => (
+              <div key={idx} className="flex flex-col items-center">
+                <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-1">
+                  {item.icon}
+                </div>
+                <span className="text-xs">{item.name}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* For You Feed */}
+        <div>
+          <h2 className="text-lg font-medium mb-3">For You</h2>
+          <div className="space-y-4">
+            {newsItems.map((item) => (
+              <motion.div 
+                key={item.id} 
+                className="border rounded-lg overflow-hidden"
+                whileHover={{ scale: 1.02 }}
+                transition={{ type: "spring", stiffness: 300 }}
+              >
+                <div className="flex">
+                  <div className="w-24 h-24 bg-gray-200">
+                    <img 
+                      src={item.imageUrl} 
+                      alt={item.title} 
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div className="p-3 flex-1">
+                    <p className="text-sm text-gray-500">{item.source} • {item.timeAgo}</p>
+                    <h3 className="font-medium line-clamp-2 mt-1">{item.title}</h3>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
       </div>
 
-      {/* Google Search Buttons */}
-      <motion.div 
-        className="flex justify-center space-x-2 mb-8"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.5 }}
-      >
-        <motion.button 
-          className="bg-gray-100 hover:bg-gray-200 px-4 py-2 text-sm text-gray-700 rounded"
-          whileHover={{ scale: 1.03 }}
-          whileTap={{ scale: 0.97 }}
-        >
-          Google Search
-        </motion.button>
-        <motion.button 
-          className="bg-gray-100 hover:bg-gray-200 px-4 py-2 text-sm text-gray-700 rounded"
-          whileHover={{ scale: 1.03 }}
-          whileTap={{ scale: 0.97 }}
-        >
-          I'm Feeling Lucky
-        </motion.button>
-      </motion.div>
-
-      {/* Quick Links */}
-      <motion.div 
-        className="px-4 mb-8"
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-      >
-        <h2 className="text-lg font-medium text-gray-800 mb-3 px-1">Quick access</h2>
-        <div className="grid grid-cols-4 gap-3">
-          {[
-            { icon: <Bookmark className="text-google-blue" />, name: "Bookmarks" },
-            { icon: <Calendar className="text-google-green" />, name: "Calendar" },
-            { icon: <MapPin className="text-google-red" />, name: "Maps" },
-            { icon: <Bell className="text-google-yellow" />, name: "Notifications" }
-          ].map((item, index) => (
-            <motion.div 
-              key={index}
-              variants={itemVariants}
-              className="flex flex-col items-center p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-            >
-              <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm mb-2">
-                {item.icon}
-              </div>
-              <span className="text-xs text-gray-700">{item.name}</span>
-            </motion.div>
-          ))}
-        </div>
-      </motion.div>
-
-      {/* Discover Section */}
-      <motion.div 
-        className="px-4 mt-2"
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-        transition={{ delayChildren: 0.2 }}
-      >
-        <h2 className="text-lg font-medium text-gray-800 mb-3 px-1">Discover</h2>
-        <div className="grid grid-cols-2 gap-3">
-          {discoverCards.map(card => (
-            <motion.div 
-              key={card.id} 
-              variants={itemVariants}
-              className="p-4 rounded-xl flex items-center space-x-3 bg-gray-50 hover:bg-gray-100 transition-colors"
-            >
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center text-xl ${card.color} text-white`}>
-                {card.icon}
-              </div>
-              <div>
-                <h3 className="font-medium text-gray-800">{card.title}</h3>
-                <p className="text-sm text-gray-600">{card.subtitle}</p>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      </motion.div>
-
-      {/* News Feed */}
-      <motion.div 
-        className="px-4 mt-6 pb-20"
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-        transition={{ delayChildren: 0.4 }}
-      >
-        <h2 className="text-lg font-medium text-gray-800 mb-3 px-1">For you</h2>
-        <div className="space-y-4">
-          {newsArticles.map(article => (
-            <motion.div 
-              key={article.id}
-              variants={itemVariants} 
-              className="flex space-x-3 hover:bg-gray-50 p-2 rounded-lg transition-colors"
-              whileHover={{ scale: 1.01 }}
-            >
-              <div className="flex-1">
-                <h3 className="font-medium text-gray-800 line-clamp-2">{article.title}</h3>
-                <div className="flex items-center text-sm text-gray-600 mt-1">
-                  <span>{article.source}</span>
-                  <span className="mx-1">•</span>
-                  <span>{article.timeAgo}</span>
-                </div>
-              </div>
-              <div className="w-20 h-20 rounded-lg overflow-hidden flex-shrink-0">
-                <img 
-                  src={article.imageUrl} 
-                  alt={article.title} 
-                  className="w-full h-full object-cover"
-                  loading="lazy" 
-                />
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      </motion.div>
-
       {/* Bottom Navigation */}
-      <motion.div 
-        className="fixed bottom-0 left-0 right-0 bg-white p-3 border-t flex justify-around shadow-lg"
-        initial={{ y: 50, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ delay: 0.7 }}
-      >
-        <motion.div 
-          className="flex flex-col items-center text-google-blue"
-          whileHover={{ scale: 1.1 }}
-        >
+      <nav className="fixed bottom-0 left-0 right-0 bg-white p-4 border-t flex justify-around shadow-md">
+        <div className="flex flex-col items-center text-google-blue">
           <Search className="w-5 h-5" />
           <span className="text-xs mt-1">Search</span>
-        </motion.div>
-        <motion.div 
-          className="flex flex-col items-center text-gray-500"
-          whileHover={{ scale: 1.1 }}
-          onClick={() => navigate('/search', { state: { openCamera: true } })}
-        >
+        </div>
+        <div className="flex flex-col items-center text-gray-500" onClick={() => navigate('/search', { state: { openCamera: true } })}>
           <Camera className="w-5 h-5" />
           <span className="text-xs mt-1">Lens</span>
-        </motion.div>
-        <motion.div 
-          className="flex flex-col items-center text-gray-500"
-          whileHover={{ scale: 1.1 }}
+        </div>
+        <div className="flex flex-col items-center text-gray-500">
+          <Grid className="w-5 h-5" />
+          <span className="text-xs mt-1">Discover</span>
+        </div>
+      </nav>
+
+      {/* Sign In Modal */}
+      {showSignInModal && (
+        <motion.div
+          className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          onClick={() => setShowSignInModal(false)}
         >
-          <User className="w-5 h-5" />
-          <span className="text-xs mt-1">Account</span>
+          <motion.div
+            className="bg-white rounded-lg p-6 w-full max-w-sm"
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-center mb-6">
+              <svg viewBox="0 0 272 92" width="120" height="40">
+                <path fill="#EA4335" d="M115.75 47.18c0 12.77-9.99 22.18-22.25 22.18s-22.25-9.41-22.25-22.18C71.25 34.32 81.24 25 93.5 25s22.25 9.32 22.25 22.18zm-9.74 0c0-7.98-5.79-13.44-12.51-13.44S80.99 39.2 80.99 47.18c0 7.9 5.79 13.44 12.51 13.44s12.51-5.55 12.51-13.44z" />
+                <path fill="#FBBC05" d="M163.75 47.18c0 12.77-9.99 22.18-22.25 22.18s-22.25-9.41-22.25-22.18c0-12.85 9.99-22.18 22.25-22.18s22.25 9.32 22.25 22.18zm-9.74 0c0-7.98-5.79-13.44-12.51-13.44s-12.51 5.46-12.51 13.44c0 7.9 5.79 13.44 12.51 13.44s12.51-5.55 12.51-13.44z" />
+                <path fill="#4285F4" d="M209.75 26.34v39.82c0 16.38-9.66 23.07-21.08 23.07-10.75 0-17.22-7.19-19.66-13.07l8.48-3.53c1.51 3.61 5.21 7.87 11.17 7.87 7.31 0 11.84-4.51 11.84-13v-3.19h-.34c-2.18 2.69-6.38 5.04-11.68 5.04-11.09 0-21.25-9.66-21.25-22.09 0-12.52 10.16-22.26 21.25-22.26 5.29 0 9.49 2.35 11.68 4.96h.34v-3.61h9.25zm-8.56 20.92c0-7.81-5.21-13.52-11.84-13.52-6.72 0-12.35 5.71-12.35 13.52 0 7.73 5.63 13.36 12.35 13.36 6.63 0 11.84-5.63 11.84-13.36z" />
+                <path fill="#34A853" d="M225 3v65h-9.5V3h9.5z" />
+                <path fill="#EA4335" d="M262.02 54.48l7.56 5.04c-2.44 3.61-8.32 9.83-18.48 9.83-12.6 0-22.01-9.74-22.01-22.18 0-13.19 9.49-22.18 20.92-22.18 11.51 0 17.14 9.16 18.98 14.11l1.01 2.52-29.65 12.28c2.27 4.45 5.8 6.72 10.75 6.72 4.96 0 8.4-2.44 10.92-6.14zm-23.27-7.98l19.82-8.23c-1.09-2.77-4.37-4.7-8.23-4.7-4.95 0-11.84 4.37-11.59 12.93z" />
+                <path fill="#4285F4" d="M35.29 41.41V32H67c.31 1.64.47 3.58.47 5.68 0 7.06-1.93 15.79-8.15 22.01-6.05 6.3-13.78 9.66-24.02 9.66C16.32 69.35.36 53.89.36 34.91.36 15.93 16.32.47 35.3.47c10.5 0 17.98 4.12 23.6 9.49l-6.64 6.64c-4.03-3.78-9.49-6.72-16.97-6.72-13.86 0-24.7 11.17-24.7 25.03 0 13.86 10.84 25.03 24.7 25.03 8.99 0 14.11-3.61 17.39-6.89 2.66-2.66 4.41-6.46 5.1-11.65l-22.49.01z" />
+              </svg>
+            </div>
+            <h2 className="text-xl font-medium text-center mb-2">Sign in</h2>
+            <p className="text-center text-gray-600 mb-6">Use your Google Account</p>
+            
+            <div className="space-y-4">
+              <div className="border rounded-md p-3">
+                <label className="text-xs text-gray-500 block">Email or phone</label>
+                <input type="email" className="w-full focus:outline-none" defaultValue="user@example.com" />
+              </div>
+              
+              <div className="border rounded-md p-3">
+                <label className="text-xs text-gray-500 block">Password</label>
+                <input type="password" className="w-full focus:outline-none" defaultValue="••••••••" />
+              </div>
+            </div>
+            
+            <div className="flex justify-between mt-6">
+              <Button variant="link" className="text-google-blue px-0">
+                Create account
+              </Button>
+              
+              <Button 
+                onClick={handleSignIn}
+                className="bg-google-blue hover:bg-blue-700 text-white"
+              >
+                Sign in
+              </Button>
+            </div>
+          </motion.div>
         </motion.div>
-      </motion.div>
+      )}
     </div>
   );
 };
