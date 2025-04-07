@@ -73,12 +73,28 @@
   
   /* Constrain the max width for mobile-first approach */
   #root {
-    @apply max-w-md mx-auto;
+    @apply mx-auto;
     width: 100%;
   }
 }
 
 @layer components {
+  .container-custom {
+    @apply px-4 md:max-w-4xl lg:max-w-6xl mx-auto;
+  }
+  
+  .header-full-width {
+    @apply w-full;
+  }
+  
+  .main-content {
+    @apply container-custom;
+  }
+  
+  .footer-full-width {
+    @apply w-full;
+  }
+
   .search-bar-container {
     @apply flex items-center px-4 py-2 rounded-full w-full border border-gray-300 focus-within:border-google-blue focus-within:shadow-md;
     transition: all 0.2s ease;
