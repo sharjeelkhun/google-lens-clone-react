@@ -1,4 +1,3 @@
-
 import { useEffect, useState, useRef } from "react";
 import { Search, X, Camera, Mic, ArrowLeft, ChevronDown } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -29,7 +28,6 @@ const SearchPage = () => {
   }, [location.state]);
 
   useEffect(() => {
-    // Focus the input when the component mounts
     if (inputRef.current && !openCamera) {
       inputRef.current.focus();
     }
@@ -90,18 +88,14 @@ const SearchPage = () => {
       const context = canvas.getContext("2d");
       
       if (context) {
-        // Show flash effect
         setShowFlash(true);
         setTimeout(() => setShowFlash(false), 300);
         
-        // Set canvas size to match video dimensions
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
         
-        // Draw the current video frame to canvas
         context.drawImage(video, 0, 0, canvas.width, canvas.height);
         
-        // Convert canvas to data URL
         const imageDataUrl = canvas.toDataURL("image/jpeg");
         setSelectedImage(imageDataUrl);
         stopCamera();
@@ -121,8 +115,6 @@ const SearchPage = () => {
   };
 
   const handleSearchWithImage = () => {
-    // Here you would normally send the image to the search API
-    // For this example, we'll just navigate to results
     navigate("/results");
   };
 
@@ -136,10 +128,14 @@ const SearchPage = () => {
     }
   };
 
+  const handleSelectSuggestion = (suggestion: string) => {
+    setSearchTerm(suggestion);
+    navigate("/results");
+  };
+
   return (
     <div className="min-h-screen bg-white flex flex-col">
       <div className="main-content flex-1">
-        {/* Header */}
         <div className="flex justify-between items-center p-4">
           <div className="flex items-center">
             {(openCamera || focusedInput) && (
@@ -180,7 +176,6 @@ const SearchPage = () => {
           )}
         </div>
 
-        {/* Search Bar - Only show when camera is not open */}
         {!openCamera && (
           <div className="p-4">
             <form onSubmit={handleSubmit}>
@@ -219,14 +214,15 @@ const SearchPage = () => {
           </div>
         )}
 
-        {/* Search Suggestions */}
         {!openCamera && focusedInput && searchTerm && (
           <div className="px-4">
-            <SearchSuggestions searchTerm={searchTerm} />
+            <SearchSuggestions 
+              searchTerm={searchTerm} 
+              onSelectSuggestion={handleSelectSuggestion} 
+            />
           </div>
         )}
 
-        {/* Camera View */}
         <AnimatePresence>
           {openCamera && (
             <motion.div
@@ -235,7 +231,6 @@ const SearchPage = () => {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
             >
-              {/* Flash overlay */}
               {showFlash && (
                 <div className="absolute inset-0 bg-white animate-flash z-20"></div>
               )}
@@ -274,7 +269,6 @@ const SearchPage = () => {
                       className="w-full h-full object-cover"
                     />
 
-                    {/* Viewfinder overlay */}
                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                       <div className="w-5/6 h-5/6 border-2 border-white rounded-lg"></div>
                     </div>
@@ -298,7 +292,6 @@ const SearchPage = () => {
           )}
         </AnimatePresence>
 
-        {/* Search History - Only show when not in camera mode */}
         {!openCamera && !focusedInput && (
           <div className="mt-6 px-4">
             <h3 className="text-sm text-gray-700 mb-2 font-medium">Recent searches</h3>

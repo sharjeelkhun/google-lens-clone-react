@@ -3,14 +3,16 @@ import { useState, useEffect } from "react";
 import { useSearch } from "@/context/SearchContext";
 import { Search, Clock, TrendingUp } from "lucide-react";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 
 type SearchSuggestionsProps = {
-  onSelectSuggestion: (suggestion: string) => void;
   searchTerm: string;
+  onSelectSuggestion?: (suggestion: string) => void;
 };
 
-const SearchSuggestions = ({ onSelectSuggestion, searchTerm }: SearchSuggestionsProps) => {
-  const { recentSearches, trendingSearches } = useSearch();
+const SearchSuggestions = ({ searchTerm, onSelectSuggestion }: SearchSuggestionsProps) => {
+  const navigate = useNavigate();
+  const { recentSearches, trendingSearches, setSearchTerm } = useSearch();
   const [suggestions, setSuggestions] = useState<string[]>([]);
   
   useEffect(() => {
@@ -43,6 +45,16 @@ const SearchSuggestions = ({ onSelectSuggestion, searchTerm }: SearchSuggestions
     setSuggestions(uniqueMatched);
   }, [searchTerm, recentSearches, trendingSearches]);
 
+  const handleSuggestionClick = (suggestion: string) => {
+    if (onSelectSuggestion) {
+      onSelectSuggestion(suggestion);
+    } else {
+      // Default behavior if no handler is provided
+      setSearchTerm(suggestion);
+      navigate("/results");
+    }
+  };
+
   return (
     <motion.div
       className="bg-white rounded-lg shadow-lg mt-1 overflow-hidden max-h-[70vh] overflow-y-auto"
@@ -60,7 +72,7 @@ const SearchSuggestions = ({ onSelectSuggestion, searchTerm }: SearchSuggestions
             <motion.li
               key={index}
               className="px-4 py-3 hover:bg-gray-100 cursor-pointer flex items-center"
-              onClick={() => onSelectSuggestion(suggestion)}
+              onClick={() => handleSuggestionClick(suggestion)}
               whileHover={{ backgroundColor: "#f8f9fa" }}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}

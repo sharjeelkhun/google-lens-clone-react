@@ -18,7 +18,7 @@ const ResultsPage = () => {
 
   const { data: searchResults, isLoading } = useQuery({
     queryKey: ["searchResults", searchTerm, activeTab],
-    queryFn: () => fetchSearchResults(searchTerm, activeTab),
+    queryFn: () => fetchSearchResults({ query: searchTerm, type: activeTab === 'images' ? 'image' : 'web' }),
     enabled: !!searchTerm,
   });
 
@@ -35,9 +35,9 @@ const ResultsPage = () => {
   };
 
   // Calculate pagination
-  const totalPages = searchResults ? Math.ceil(searchResults.length / resultsPerPage) : 0;
-  const paginatedResults = searchResults
-    ? searchResults.slice((currentPage - 1) * resultsPerPage, currentPage * resultsPerPage)
+  const totalPages = searchResults?.searchResults ? Math.ceil(searchResults.searchResults.length / resultsPerPage) : 0;
+  const paginatedResults = searchResults?.searchResults
+    ? searchResults.searchResults.slice((currentPage - 1) * resultsPerPage, currentPage * resultsPerPage)
     : [];
 
   // Header Content
@@ -200,9 +200,9 @@ const ResultsPage = () => {
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-google-blue"></div>
               </div>
             ) : (
-              searchResults?.slice(0, 12).map((result) => (
+              searchResults?.visualMatches?.slice(0, 12).map((result) => (
                 <motion.div
-                  key={result.id}
+                  key={result.imageUrl}
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ duration: 0.3 }}

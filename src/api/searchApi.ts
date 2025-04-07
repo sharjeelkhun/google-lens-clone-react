@@ -1,4 +1,3 @@
-
 import { toast } from "@/hooks/use-toast";
 
 export type SearchOptions = {
@@ -8,9 +7,12 @@ export type SearchOptions = {
 };
 
 export type SearchResult = {
+  id?: string;
   title: string;
-  link: string;
+  link?: string;
+  url?: string;
   description: string;
+  domain?: string;
   favicon?: string;
   source?: string;
   date?: string;
@@ -118,9 +120,12 @@ const transformWikipediaResponse = (apiResponse: any, query: string): SearchResp
       const plainTextSnippet = result.snippet.replace(/<\/?[^>]+(>|$)/g, "");
       
       return {
+        id: result.pageid?.toString() || String(Math.random()),
         title: result.title || 'Wikipedia Result',
+        url: `https://en.wikipedia.org/wiki/${encodeURIComponent(result.title)}`,
         link: `https://en.wikipedia.org/wiki/${encodeURIComponent(result.title)}`,
         description: plainTextSnippet || 'No description available',
+        domain: 'wikipedia.org',
         favicon: 'https://en.wikipedia.org/static/favicon/wikipedia.ico',
         source: 'Wikipedia',
         date: new Date(result.timestamp).toLocaleDateString()
