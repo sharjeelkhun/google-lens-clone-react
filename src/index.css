@@ -70,6 +70,12 @@
       "calt" 1;
     overscroll-behavior: none;
   }
+  
+  /* Constrain the max width for mobile-first approach */
+  #root {
+    @apply max-w-md mx-auto;
+    width: 100%;
+  }
 }
 
 @layer components {
