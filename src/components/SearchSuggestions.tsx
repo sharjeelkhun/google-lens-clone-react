@@ -12,7 +12,7 @@ type SearchSuggestionsProps = {
 
 const SearchSuggestions = ({ searchTerm, onSelectSuggestion }: SearchSuggestionsProps) => {
   const navigate = useNavigate();
-  const { recentSearches, trendingSearches, setSearchTerm } = useSearch();
+  const { recentSearches, trendingSearches, setSearchTerm, addToHistory } = useSearch();
   const [suggestions, setSuggestions] = useState<string[]>([]);
   
   useEffect(() => {
@@ -46,6 +46,9 @@ const SearchSuggestions = ({ searchTerm, onSelectSuggestion }: SearchSuggestions
   }, [searchTerm, recentSearches, trendingSearches]);
 
   const handleSuggestionClick = (suggestion: string) => {
+    // Add to search history
+    addToHistory(suggestion, 'text');
+    
     if (onSelectSuggestion) {
       onSelectSuggestion(suggestion);
     } else {

@@ -1,3 +1,4 @@
+
 import { toast } from "@/hooks/use-toast";
 
 export type SearchOptions = {
@@ -161,7 +162,7 @@ const getMockSearchResults = (type: 'web' | 'image'): SearchResponse => {
     return getMockImageSearchResults();
   }
   
-  // Import the mock data and return formatted response
+  // Return formatted response
   return {
     searchResults: getMockTextSearchResults(),
     relatedSearches: [
