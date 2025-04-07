@@ -6,8 +6,6 @@ import {
   ArrowLeft, 
   Camera, 
   Search, 
-  Info, 
-  ShoppingBag, 
   MoreHorizontal, 
   ChevronLeft, 
   Mic, 
@@ -91,7 +89,7 @@ const ResultsPage = () => {
   // Function to render a single search result
   const renderSearchResult = (result: SearchResult, index: number) => {
     return (
-      <div key={`${result.title}-${index}`} className="mb-6 px-4">
+      <div key={`${result.title}-${index}`} className="mb-6">
         <div className="flex items-center text-xs text-google-secondary-text mb-1">
           <img 
             src={result.favicon || "https://www.google.com/favicon.ico"} 
@@ -102,7 +100,7 @@ const ResultsPage = () => {
           <MoreHorizontal size={12} className="ml-1" />
         </div>
         
-        <h3 className="text-[#1a0dab] text-base font-medium leading-tight mb-1">
+        <h3 className="text-[#1a0dab] text-xl font-normal leading-tight mb-1">
           <a href={result.link} className="hover:underline">
             {result.title}
           </a>
@@ -218,11 +216,13 @@ const ResultsPage = () => {
               )}
 
               {/* Search Results */}
-              {searchResults && searchResults.length > 0 && (
-                <div className="mb-6">
-                  {searchResults.map((result, index) => renderSearchResult(result, index))}
-                </div>
-              )}
+              <div className="px-4">
+                {searchResults && searchResults.length > 0 && (
+                  <div className="mb-6 space-y-6">
+                    {searchResults.map((result, index) => renderSearchResult(result, index))}
+                  </div>
+                )}
+              </div>
 
               {/* People Also Ask */}
               <div className="px-4 mb-6">
