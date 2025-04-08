@@ -8,10 +8,18 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchSearchResults } from "@/api/searchApi";
 import { motion } from "framer-motion";
 import { ResultsLayout } from "@/components/layout/ResultsLayout";
+import { toast } from "@/hooks/use-toast";
+import { startSpeechRecognition } from "@/utils/speechRecognition";
 
 const ResultsPage = () => {
   const navigate = useNavigate();
-  const { searchTerm, setSearchTerm } = useSearch();
+  const { 
+    searchTerm, 
+    setSearchTerm, 
+    isListening, 
+    setIsListening,
+    addToHistory 
+  } = useSearch();
   const [activeTab, setActiveTab] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const resultsPerPage = 10;
@@ -30,8 +38,32 @@ const ResultsPage = () => {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchTerm.trim()) {
-      // Refresh search results
+      addToHistory(searchTerm, 'text');
+      // Refresh search results by refetching the query
     }
+  };
+
+  // Handle voice search functionality
+  const handleVoiceSearch = () => {
+    const started = startSpeechRecognition(
+      (text) => setSearchTerm(text),
+      (listening) => setIsListening(listening)
+    );
+    
+    if (!started) {
+      console.error("Speech recognition failed to start");
+      toast({
+        title: "Speech Recognition Failed",
+        description: "Your browser may not support this feature",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Handle camera search functionality
+  const handleCameraSearch = () => {
+    // Navigate to the search page with state to open camera
+    navigate('/', { state: { openCamera: true } });
   };
 
   // Calculate pagination
@@ -83,10 +115,14 @@ const ResultsPage = () => {
             className="flex-1 bg-transparent"
           />
           <div className="flex items-center space-x-3">
-            <button type="button" className="hover:bg-gray-100 p-2 rounded-full">
-              <Mic className="w-4 h-4 text-gray-400" />
+            <button type="button" onClick={handleVoiceSearch} className="hover:bg-gray-100 p-2 rounded-full">
+              {isListening ? (
+                <div className="w-4 h-4 rounded-full bg-google-blue animate-pulse"></div>
+              ) : (
+                <Mic className="w-4 h-4 text-gray-400" />
+              )}
             </button>
-            <button type="button" className="hover:bg-gray-100 p-2 rounded-full">
+            <button type="button" onClick={handleCameraSearch} className="hover:bg-gray-100 p-2 rounded-full">
               <Camera className="w-4 h-4 text-gray-400" />
             </button>
           </div>

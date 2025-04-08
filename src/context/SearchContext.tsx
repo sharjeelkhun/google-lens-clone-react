@@ -1,6 +1,5 @@
-
 import { createContext, useContext, useState, ReactNode, useCallback, useEffect } from 'react';
-import { fetchSearchResults, fetchImageSearchResults } from '@/api/searchApi';
+import { fetchSearchResults, fetchImageSearchResults, SearchResponse } from '@/api/searchApi';
 
 type SearchImage = {
   file: File | null;
@@ -160,7 +159,7 @@ export const SearchProvider = ({ children }: { children: ReactNode }) => {
     setSettings(prev => ({ ...prev, ...newSettings }));
   }, []);
   
-  const performImageSearch = useCallback(async (imageFile: File) => {
+  const performImageSearch = useCallback(async (imageFile: File): Promise<void> => {
     if (!imageFile) return;
     
     try {
@@ -182,7 +181,6 @@ export const SearchProvider = ({ children }: { children: ReactNode }) => {
         searchResults: results.visualMatches || []
       }));
       
-      return results;
     } catch (error) {
       console.error('Error performing image search:', error);
       throw error;
