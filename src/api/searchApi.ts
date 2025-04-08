@@ -87,8 +87,15 @@ export const fetchImageSearchResults = async (imageFile: File): Promise<SearchRe
     // For now, we'll simulate with a delay and return mock data
     await new Promise(resolve => setTimeout(resolve, 1500));
     
-    // Fallback to mock image search data
-    return getMockImageSearchResults();
+    // Get mock image search data - we ensure it returns proper format
+    const mockData = getMockImageSearchResults();
+    
+    // Make sure searchResults is always an array
+    if (!mockData.searchResults || !Array.isArray(mockData.searchResults)) {
+      mockData.searchResults = [];
+    }
+    
+    return mockData;
   } catch (error) {
     console.error('Error in image search:', error);
     toast({
@@ -181,23 +188,27 @@ const getMockImageSearchResults = (): SearchResponse => {
   const mockData = require('@/data/mockSearchResults').mockImageSearchResults;
   
   // Ensure the data conforms to our SearchResponse type
-  return {
-    searchResults: mockData.searchResults.map((item: any): SearchResult => ({
-      title: item.title || '',
-      link: '#',
-      description: item.additionalInfo || item.answer || '',
-    })),
-    visualMatches: mockData.visualMatches,
-    shoppingResults: mockData.shoppingResults,
+  const formattedResponse: SearchResponse = {
+    searchResults: Array.isArray(mockData.searchResults) 
+      ? mockData.searchResults.map((item: any): SearchResult => ({
+          title: item.title || '',
+          link: item.link || '#',
+          description: item.additionalInfo || item.answer || '',
+        }))
+      : [],
+    visualMatches: mockData.visualMatches || [],
+    shoppingResults: mockData.shoppingResults || [],
     relatedSearches: [
       "similar images", 
       "visual search", 
       "image recognition",
       "reverse image search"
     ],
-    answer: mockData.searchResults[0]?.answer || '',
-    additionalInfo: mockData.searchResults[0]?.additionalInfo || ''
+    answer: mockData.searchResults?.[0]?.answer || '',
+    additionalInfo: mockData.searchResults?.[0]?.additionalInfo || ''
   };
+  
+  return formattedResponse;
 };
 
 // Helper function to get mock text search results

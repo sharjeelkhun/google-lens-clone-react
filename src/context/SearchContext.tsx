@@ -1,6 +1,5 @@
-
 import { createContext, useContext, useState, ReactNode, useCallback, useEffect } from 'react';
-import { fetchSearchResults } from '@/api/searchApi';
+import { fetchSearchResults, fetchImageSearchResults } from '@/api/searchApi';
 
 type SearchImage = {
   file: File | null;
@@ -39,6 +38,7 @@ type SearchContextType = {
   recentSearches: string[];
   trendingSearches: string[];
   topSearches: string[];
+  performImageSearch: (imageFile: File) => Promise<void>;
 };
 
 const defaultSettings: SearchSettings = {
@@ -48,7 +48,6 @@ const defaultSettings: SearchSettings = {
   resultsPerPage: 10
 };
 
-// Trending searches - these would normally come from an API but we'll hardcode for now
 const initialTrendingSearches = [
   'AI news', 
   'vacation destinations', 
@@ -71,7 +70,6 @@ export const SearchProvider = ({ children }: { children: ReactNode }) => {
   const [trendingSearches, setTrendingSearches] = useState(initialTrendingSearches);
   const [topSearches, setTopSearches] = useState<string[]>([]);
   
-  // Load settings from localStorage on mount
   useEffect(() => {
     const savedSettings = localStorage.getItem('googleCloneSettings');
     if (savedSettings) {
@@ -86,7 +84,6 @@ export const SearchProvider = ({ children }: { children: ReactNode }) => {
     if (savedHistory) {
       try {
         const parsedHistory = JSON.parse(savedHistory);
-        // Convert string timestamps back to Date objects
         const historyWithDates = parsedHistory.map((item: any) => ({
           ...item,
           timestamp: new Date(item.timestamp)
@@ -97,15 +94,11 @@ export const SearchProvider = ({ children }: { children: ReactNode }) => {
       }
     }
     
-    // Simulate fetching trending searches from an API
     fetchTopSearchTerms();
   }, []);
   
-  // Simulated API call to fetch top search terms
   const fetchTopSearchTerms = async () => {
     try {
-      // In a real app, we would make an API call here
-      // For now, we'll use some hardcoded values
       const mockTopSearches = [
         'breaking news',
         'weather forecast',
@@ -123,12 +116,10 @@ export const SearchProvider = ({ children }: { children: ReactNode }) => {
     }
   };
   
-  // Save settings to localStorage when they change
   useEffect(() => {
     localStorage.setItem('googleCloneSettings', JSON.stringify(settings));
   }, [settings]);
   
-  // Save history to localStorage when it changes
   useEffect(() => {
     localStorage.setItem('googleCloneSearchHistory', JSON.stringify(searchHistory));
   }, [searchHistory]);
@@ -151,7 +142,6 @@ export const SearchProvider = ({ children }: { children: ReactNode }) => {
         imagePreview
       };
       
-      // Limit history size to prevent excessive storage use
       const withNewItem = [newItem, ...prev];
       if (withNewItem.length > 100) {
         return withNewItem.slice(0, 100);
@@ -169,7 +159,20 @@ export const SearchProvider = ({ children }: { children: ReactNode }) => {
     setSettings(prev => ({ ...prev, ...newSettings }));
   }, []);
   
-  // Get recent text searches for suggestions
+  const performImageSearch = useCallback(async (imageFile: File) => {
+    if (!imageFile) return;
+    
+    try {
+      setSearchImage(prev => ({
+        ...prev,
+        file: imageFile,
+        preview: URL.createObjectURL(imageFile)
+      }));
+    } catch (error) {
+      console.error('Error setting up image search:', error);
+    }
+  }, []);
+  
   const recentSearches = searchHistory
     .filter(item => item.type === 'text')
     .map(item => item.term)
@@ -192,7 +195,8 @@ export const SearchProvider = ({ children }: { children: ReactNode }) => {
         updateSettings,
         recentSearches,
         trendingSearches,
-        topSearches
+        topSearches,
+        performImageSearch
       }}
     >
       {children}

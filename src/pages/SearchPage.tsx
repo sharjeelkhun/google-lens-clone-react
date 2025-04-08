@@ -10,7 +10,7 @@ import { motion, AnimatePresence } from "framer-motion";
 const SearchPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { searchTerm, setSearchTerm, isListening, setIsListening, addToHistory } = useSearch();
+  const { searchTerm, setSearchTerm, isListening, setIsListening, addToHistory, setSearchImage } = useSearch();
   const [focusedInput, setFocusedInput] = useState(false);
   const [openCamera, setOpenCamera] = useState(false);
   const [cameraCapturing, setCameraCapturing] = useState(false);
@@ -117,12 +117,24 @@ const SearchPage = () => {
     }
   };
 
-  const handleSearchWithImage = () => {
-    // Add to history if we have a selected image
+  const handleSearchWithImage = async () => {
     if (selectedImage) {
+      // Add to history
       addToHistory("Image search", 'image', selectedImage);
+      
+      // Convert data URL to File object
+      const response = await fetch(selectedImage);
+      const blob = await response.blob();
+      const file = new File([blob], "captured-image.jpg", { type: "image/jpeg" });
+      
+      // Store the image in context for use in results page
+      setSearchImage({ 
+        file, 
+        preview: selectedImage 
+      });
+      
+      navigate("/results");
     }
-    navigate("/results");
   };
 
   const handleGoBack = () => {
