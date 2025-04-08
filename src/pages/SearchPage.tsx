@@ -6,16 +6,25 @@ import { useSearch } from "@/context/SearchContext";
 import { startSpeechRecognition } from "@/utils/speechRecognition";
 import SearchSuggestions from "@/components/SearchSuggestions";
 import { motion, AnimatePresence } from "framer-motion";
+import { toast } from "@/hooks/use-toast";
 
 const SearchPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { searchTerm, setSearchTerm, isListening, setIsListening, addToHistory, setSearchImage } = useSearch();
+  const { 
+    searchTerm, 
+    setSearchTerm, 
+    isListening, 
+    setIsListening, 
+    addToHistory, 
+    performImageSearch 
+  } = useSearch();
   const [focusedInput, setFocusedInput] = useState(false);
   const [openCamera, setOpenCamera] = useState(false);
   const [cameraCapturing, setCameraCapturing] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [showFlash, setShowFlash] = useState(false);
+  const [cameraError, setCameraError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -58,20 +67,34 @@ const SearchPage = () => {
     
     if (!started) {
       console.error("Speech recognition failed to start");
+      toast({
+        title: "Speech Recognition Failed",
+        description: "Your browser may not support this feature",
+        variant: "destructive"
+      });
     }
   };
 
   const startCamera = async () => {
+    setCameraError(null);
     try {
       if (videoRef.current) {
         const stream = await navigator.mediaDevices.getUserMedia({
           video: { facingMode: "environment" }
         });
         videoRef.current.srcObject = stream;
-        setCameraCapturing(true);
+        videoRef.current.onloadedmetadata = () => {
+          setCameraCapturing(true);
+        };
       }
     } catch (err) {
       console.error("Error accessing camera:", err);
+      setCameraError("Could not access camera. Please check permissions.");
+      toast({
+        title: "Camera Error",
+        description: "Could not access the camera. Please check permissions.",
+        variant: "destructive"
+      });
     }
   };
 
@@ -85,7 +108,7 @@ const SearchPage = () => {
   };
 
   const captureImage = () => {
-    if (videoRef.current && canvasRef.current) {
+    if (videoRef.current && canvasRef.current && cameraCapturing) {
       const video = videoRef.current;
       const canvas = canvasRef.current;
       const context = canvas.getContext("2d");
@@ -94,14 +117,23 @@ const SearchPage = () => {
         setShowFlash(true);
         setTimeout(() => setShowFlash(false), 300);
         
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
+        canvas.width = video.videoWidth || 640;
+        canvas.height = video.videoHeight || 480;
         
         context.drawImage(video, 0, 0, canvas.width, canvas.height);
         
-        const imageDataUrl = canvas.toDataURL("image/jpeg");
-        setSelectedImage(imageDataUrl);
-        stopCamera();
+        try {
+          const imageDataUrl = canvas.toDataURL("image/jpeg");
+          setSelectedImage(imageDataUrl);
+          stopCamera();
+        } catch (err) {
+          console.error("Error capturing image:", err);
+          toast({
+            title: "Capture Error",
+            description: "Failed to capture image",
+            variant: "destructive"
+          });
+        }
       }
     }
   };
@@ -119,21 +151,28 @@ const SearchPage = () => {
 
   const handleSearchWithImage = async () => {
     if (selectedImage) {
-      // Add to history
-      addToHistory("Image search", 'image', selectedImage);
-      
-      // Convert data URL to File object
-      const response = await fetch(selectedImage);
-      const blob = await response.blob();
-      const file = new File([blob], "captured-image.jpg", { type: "image/jpeg" });
-      
-      // Store the image in context for use in results page
-      setSearchImage({ 
-        file, 
-        preview: selectedImage 
-      });
-      
-      navigate("/results");
+      try {
+        // Convert data URL to File object
+        const response = await fetch(selectedImage);
+        const blob = await response.blob();
+        const file = new File([blob], "captured-image.jpg", { type: "image/jpeg" });
+        
+        // Use the performImageSearch function from context
+        await performImageSearch(file);
+        
+        // Add to history after successful processing
+        addToHistory("Image search", 'image', selectedImage);
+        
+        // Navigate to results page
+        navigate("/results");
+      } catch (error) {
+        console.error("Error processing image search:", error);
+        toast({
+          title: "Image Search Failed",
+          description: "Could not process the image search",
+          variant: "destructive"
+        });
+      }
     }
   };
 
@@ -199,7 +238,7 @@ const SearchPage = () => {
         {!openCamera && (
           <div className="p-4">
             <form onSubmit={handleSubmit}>
-              <div className="search-bar-container">
+              <div className="search-bar-container border border-gray-300 rounded-full px-4 py-2 flex items-center shadow-sm">
                 <Search className="text-gray-400 w-5 h-5 mr-3" />
                 <input
                   ref={inputRef}
@@ -209,7 +248,7 @@ const SearchPage = () => {
                   onFocus={() => setFocusedInput(true)}
                   onBlur={() => setTimeout(() => setFocusedInput(false), 200)} // Delay for click to register
                   placeholder="Search Google or type a URL"
-                  className="flex-1 bg-transparent text-base"
+                  className="flex-1 bg-transparent text-base outline-none"
                 />
                 <div className="flex items-center space-x-2">
                   {searchTerm && (
@@ -220,7 +259,7 @@ const SearchPage = () => {
                   <div className="h-5 border-l border-gray-300 mx-1"></div>
                   <button type="button" onClick={handleVoiceSearch}>
                     {isListening ? (
-                      <div className="w-5 h-5 rounded-full bg-google-blue animate-pulse-custom"></div>
+                      <div className="w-5 h-5 rounded-full bg-google-blue animate-pulse"></div>
                     ) : (
                       <Mic className="w-5 h-5 text-gray-400" />
                     )}
@@ -281,13 +320,30 @@ const SearchPage = () => {
                 </div>
               ) : (
                 <div className="flex-1 flex flex-col">
-                  <div className="flex-1 relative">
-                    <video
-                      ref={videoRef}
-                      autoPlay
-                      playsInline
-                      className="w-full h-full object-cover"
-                    />
+                  <div className="flex-1 relative bg-black">
+                    {cameraError ? (
+                      <div className="absolute inset-0 flex items-center justify-center bg-gray-100 text-center p-4">
+                        <div>
+                          <p className="text-red-500 mb-4">{cameraError}</p>
+                          <button 
+                            onClick={() => {
+                              setCameraError(null);
+                              startCamera();
+                            }}
+                            className="px-4 py-2 bg-blue-500 text-white rounded-md"
+                          >
+                            Try Again
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <video
+                        ref={videoRef}
+                        autoPlay
+                        playsInline
+                        className="w-full h-full object-cover"
+                      />
+                    )}
 
                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                       <div className="w-5/6 h-5/6 border-2 border-white rounded-lg"></div>
@@ -296,7 +352,7 @@ const SearchPage = () => {
                     <canvas ref={canvasRef} className="hidden" />
                   </div>
 
-                  {cameraCapturing && (
+                  {cameraCapturing && !cameraError && (
                     <div className="pb-8 pt-4 flex justify-center">
                       <button
                         onClick={captureImage}

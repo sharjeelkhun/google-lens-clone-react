@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useState, ReactNode, useCallback, useEffect } from 'react';
 import { fetchSearchResults, fetchImageSearchResults } from '@/api/searchApi';
 
@@ -163,13 +164,28 @@ export const SearchProvider = ({ children }: { children: ReactNode }) => {
     if (!imageFile) return;
     
     try {
+      console.log("Processing image search with file:", imageFile.name);
+      
+      // First set the image in context
       setSearchImage(prev => ({
         ...prev,
         file: imageFile,
         preview: URL.createObjectURL(imageFile)
       }));
+      
+      // Then fetch search results
+      const results = await fetchImageSearchResults(imageFile);
+      
+      // Update context with results
+      setSearchImage(prev => ({
+        ...prev,
+        searchResults: results.visualMatches || []
+      }));
+      
+      return results;
     } catch (error) {
-      console.error('Error setting up image search:', error);
+      console.error('Error performing image search:', error);
+      throw error;
     }
   }, []);
   
