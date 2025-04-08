@@ -1,3 +1,4 @@
+
 import { useEffect, useState, useRef } from "react";
 import { Search, X, Camera, Mic, ArrowLeft, ChevronDown } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -9,7 +10,7 @@ import { motion, AnimatePresence } from "framer-motion";
 const SearchPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { searchTerm, setSearchTerm, isListening, setIsListening } = useSearch();
+  const { searchTerm, setSearchTerm, isListening, setIsListening, addToHistory } = useSearch();
   const [focusedInput, setFocusedInput] = useState(false);
   const [openCamera, setOpenCamera] = useState(false);
   const [cameraCapturing, setCameraCapturing] = useState(false);
@@ -36,6 +37,8 @@ const SearchPage = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchTerm.trim()) {
+      // Add search term to history before navigating
+      addToHistory(searchTerm, 'text');
       navigate("/results");
     }
   };
@@ -115,6 +118,10 @@ const SearchPage = () => {
   };
 
   const handleSearchWithImage = () => {
+    // Add to history if we have a selected image
+    if (selectedImage) {
+      addToHistory("Image search", 'image', selectedImage);
+    }
     navigate("/results");
   };
 
@@ -130,6 +137,7 @@ const SearchPage = () => {
 
   const handleSelectSuggestion = (suggestion: string) => {
     setSearchTerm(suggestion);
+    addToHistory(suggestion, 'text');
     navigate("/results");
   };
 
@@ -187,7 +195,7 @@ const SearchPage = () => {
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   onFocus={() => setFocusedInput(true)}
-                  onBlur={() => setFocusedInput(false)}
+                  onBlur={() => setTimeout(() => setFocusedInput(false), 200)} // Delay for click to register
                   placeholder="Search Google or type a URL"
                   className="flex-1 bg-transparent text-base"
                 />
@@ -214,7 +222,7 @@ const SearchPage = () => {
           </div>
         )}
 
-        {!openCamera && focusedInput && searchTerm && (
+        {!openCamera && focusedInput && (
           <div className="px-4">
             <SearchSuggestions 
               searchTerm={searchTerm} 
@@ -301,6 +309,7 @@ const SearchPage = () => {
                 className="flex items-center py-3 border-b border-gray-100"
                 onClick={() => {
                   setSearchTerm(item);
+                  addToHistory(item, 'text');
                   navigate("/results");
                 }}
               >
