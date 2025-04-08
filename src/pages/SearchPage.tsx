@@ -25,11 +25,13 @@ const SearchPage = () => {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [showFlash, setShowFlash] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
+    // Check if we should open the camera based on navigation state
     const stateOpenCamera = location.state?.openCamera;
     if (stateOpenCamera) {
       setOpenCamera(true);
@@ -117,9 +119,11 @@ const SearchPage = () => {
         setShowFlash(true);
         setTimeout(() => setShowFlash(false), 300);
         
+        // Set canvas dimensions to match video
         canvas.width = video.videoWidth || 640;
         canvas.height = video.videoHeight || 480;
         
+        // Draw the video frame to canvas
         context.drawImage(video, 0, 0, canvas.width, canvas.height);
         
         try {
@@ -152,6 +156,7 @@ const SearchPage = () => {
   const handleSearchWithImage = async () => {
     if (selectedImage) {
       try {
+        setIsProcessing(true);
         // Convert data URL to File object
         const response = await fetch(selectedImage);
         const blob = await response.blob();
@@ -172,6 +177,8 @@ const SearchPage = () => {
           description: "Could not process the image search",
           variant: "destructive"
         });
+      } finally {
+        setIsProcessing(false);
       }
     }
   };
@@ -307,14 +314,16 @@ const SearchPage = () => {
                     <button
                       className="px-4 py-2 border border-gray-300 rounded-md"
                       onClick={handleGoBack}
+                      disabled={isProcessing}
                     >
                       Retake
                     </button>
                     <button
-                      className="px-4 py-2 bg-blue-500 text-white rounded-md"
+                      className={`px-4 py-2 bg-blue-500 text-white rounded-md ${isProcessing ? 'opacity-70' : ''}`}
                       onClick={handleSearchWithImage}
+                      disabled={isProcessing}
                     >
-                      Search
+                      {isProcessing ? 'Processing...' : 'Search'}
                     </button>
                   </div>
                 </div>

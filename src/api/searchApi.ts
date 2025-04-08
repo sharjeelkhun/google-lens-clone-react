@@ -80,11 +80,11 @@ export const fetchSearchResults = async (options: SearchOptions): Promise<Search
 // For image search using the image as input
 export const fetchImageSearchResults = async (imageFile: File): Promise<SearchResponse> => {
   try {
-    console.log("Processing image search for file:", imageFile.name);
+    console.log("Processing image search for file:", imageFile.name, "size:", imageFile.size);
     
     // Convert image to base64 for API submission
     const base64Image = await fileToBase64(imageFile);
-    console.log("Image converted to base64 successfully");
+    console.log("Image converted to base64 successfully, length:", base64Image.length);
     
     // In a real implementation, you would upload this to Google Lens API
     // For now, we'll simulate with a delay and return mock data
@@ -92,19 +92,14 @@ export const fetchImageSearchResults = async (imageFile: File): Promise<SearchRe
     
     // Get mock image search data
     const mockData = getMockImageSearchResults();
-    console.log("Image search mock data retrieved:", mockData.visualMatches?.length || 0, "visual matches");
+    console.log("Image search mock data retrieved:", mockData);
     
-    // Make sure visualMatches exists and is an array
-    if (!mockData.visualMatches || !Array.isArray(mockData.visualMatches)) {
-      mockData.visualMatches = [];
-    }
-    
-    // Make sure searchResults exists and is an array
-    if (!mockData.searchResults || !Array.isArray(mockData.searchResults)) {
-      mockData.searchResults = [];
-    }
-    
-    return mockData;
+    return {
+      searchResults: Array.isArray(mockData.searchResults) ? mockData.searchResults : [],
+      visualMatches: Array.isArray(mockData.visualMatches) ? mockData.visualMatches : [],
+      shoppingResults: Array.isArray(mockData.shoppingResults) ? mockData.shoppingResults : [],
+      relatedSearches: Array.isArray(mockData.relatedSearches) ? mockData.relatedSearches : []
+    };
   } catch (error) {
     console.error('Error in image search:', error);
     toast({
@@ -114,14 +109,34 @@ export const fetchImageSearchResults = async (imageFile: File): Promise<SearchRe
     });
     
     // Fallback to mock data with guaranteed structure
-    const fallbackData = getMockImageSearchResults();
-    
-    // Ensure all required properties exist
     return {
-      searchResults: fallbackData.searchResults || [],
-      visualMatches: fallbackData.visualMatches || [],
-      shoppingResults: fallbackData.shoppingResults || [],
-      relatedSearches: fallbackData.relatedSearches || []
+      searchResults: [],
+      visualMatches: [
+        {
+          title: "Similar Object",
+          link: "https://example.com/similar1",
+          source: "Example Source",
+          imageUrl: "https://via.placeholder.com/150",
+          description: "A similar object found in our database"
+        },
+        {
+          title: "Related Item",
+          link: "https://example.com/related1",
+          source: "Example Store",
+          imageUrl: "https://via.placeholder.com/150",
+          description: "A related item you might be interested in"
+        }
+      ],
+      shoppingResults: [
+        {
+          title: "Product Match",
+          link: "https://example.com/product1",
+          price: "$19.99",
+          store: "Example Shop",
+          imageUrl: "https://via.placeholder.com/150"
+        }
+      ],
+      relatedSearches: ["similar images", "visual search"]
     };
   }
 };

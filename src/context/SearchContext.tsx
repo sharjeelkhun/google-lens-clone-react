@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useState, ReactNode, useCallback, useEffect } from 'react';
 import { fetchSearchResults, fetchImageSearchResults, SearchResponse } from '@/api/searchApi';
 
@@ -174,6 +175,7 @@ export const SearchProvider = ({ children }: { children: ReactNode }) => {
       
       // Then fetch search results
       const results = await fetchImageSearchResults(imageFile);
+      console.log("Image search results received:", results);
       
       // Update context with results
       setSearchImage(prev => ({
