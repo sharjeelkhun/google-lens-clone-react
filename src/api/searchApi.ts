@@ -1,4 +1,3 @@
-
 import { toast } from "@/hooks/use-toast";
 
 export type SearchOptions = {
@@ -90,40 +89,12 @@ export const fetchImageSearchResults = async (imageFile: File): Promise<SearchRe
     // For now, we'll simulate with a delay and return mock data
     await new Promise(resolve => setTimeout(resolve, 1500));
     
-    // Get mock image search data
+    // Get mock image search data - NO MORE using require()
     const mockData = getMockImageSearchResults();
     console.log("Image search mock data retrieved:", mockData.visualMatches?.length || 0, "visual matches");
     
     // Ensure we return properly structured data
-    return {
-      searchResults: Array.isArray(mockData.searchResults) ? mockData.searchResults : [],
-      visualMatches: Array.isArray(mockData.visualMatches) ? mockData.visualMatches : [
-        {
-          title: "Similar Object",
-          link: "https://example.com/similar1",
-          source: "Example Source",
-          imageUrl: "https://via.placeholder.com/150",
-          description: "A similar object found in our database"
-        },
-        {
-          title: "Related Item",
-          link: "https://example.com/related1",
-          source: "Example Store",
-          imageUrl: "https://via.placeholder.com/150",
-          description: "A related item you might be interested in"
-        }
-      ],
-      shoppingResults: Array.isArray(mockData.shoppingResults) ? mockData.shoppingResults : [
-        {
-          title: "Product Match",
-          link: "https://example.com/product1",
-          price: "$19.99",
-          store: "Example Shop", 
-          imageUrl: "https://via.placeholder.com/150"
-        }
-      ],
-      relatedSearches: Array.isArray(mockData.relatedSearches) ? mockData.relatedSearches : ["similar images", "visual search"]
-    };
+    return mockData;
   } catch (error) {
     console.error('Error in image search:', error);
     toast({
@@ -132,36 +103,8 @@ export const fetchImageSearchResults = async (imageFile: File): Promise<SearchRe
       variant: "destructive"
     });
     
-    // Fallback to mock data with guaranteed structure
-    return {
-      searchResults: [],
-      visualMatches: [
-        {
-          title: "Similar Object",
-          link: "https://example.com/similar1",
-          source: "Example Source",
-          imageUrl: "https://via.placeholder.com/150",
-          description: "A similar object found in our database"
-        },
-        {
-          title: "Related Item",
-          link: "https://example.com/related1",
-          source: "Example Store",
-          imageUrl: "https://via.placeholder.com/150",
-          description: "A related item you might be interested in"
-        }
-      ],
-      shoppingResults: [
-        {
-          title: "Product Match",
-          link: "https://example.com/product1",
-          price: "$19.99",
-          store: "Example Shop",
-          imageUrl: "https://via.placeholder.com/150"
-        }
-      ],
-      relatedSearches: ["similar images", "visual search"]
-    };
+    // Return fallback data with guaranteed structure
+    return getFallbackImageSearchResults();
   }
 };
 
@@ -238,9 +181,8 @@ const getMockSearchResults = (type: 'web' | 'image'): SearchResponse => {
   };
 };
 
-// Helper function to get mock image search results
-const getMockImageSearchResults = (): SearchResponse => {
-  // Create some fallback image search results if the imported ones fail
+// Create fallback data for image searches
+const getFallbackImageSearchResults = (): SearchResponse => {
   const fallbackVisualMatches: ImageSearchResult[] = [
     {
       title: "Similar Object",
@@ -255,6 +197,13 @@ const getMockImageSearchResults = (): SearchResponse => {
       source: "Example Store",
       imageUrl: "https://via.placeholder.com/150",
       description: "A related item you might be interested in"
+    },
+    {
+      title: "Product Alternative",
+      link: "https://example.com/product2",
+      source: "Another Store",
+      imageUrl: "https://via.placeholder.com/150",
+      description: "A popular alternative product"
     }
   ];
 
@@ -265,59 +214,145 @@ const getMockImageSearchResults = (): SearchResponse => {
       price: "$19.99",
       store: "Example Shop",
       imageUrl: "https://via.placeholder.com/150"
+    },
+    {
+      title: "Bargain Option",
+      link: "https://example.com/bargain1",
+      price: "$12.99",
+      store: "Discount Store",
+      imageUrl: "https://via.placeholder.com/150"
     }
   ];
+  
+  return {
+    searchResults: [],
+    visualMatches: fallbackVisualMatches,
+    shoppingResults: fallbackShoppingResults,
+    relatedSearches: ["similar images", "visual search", "image recognition", "reverse image search"]
+  };
+};
 
+// Helper function to get mock image search results - REPLACED require() with hardcoded data
+const getMockImageSearchResults = (): SearchResponse => {
   try {
-    // Import the mock image search data
-    const mockData = require('@/data/mockSearchResults').mockImageSearchResults;
+    // Instead of require, use hardcoded mock data
+    const visualMatches: ImageSearchResult[] = [
+      {
+        title: "Visual Match 1",
+        link: "https://example.com/match1",
+        source: "Example Website",
+        imageUrl: "https://via.placeholder.com/300",
+        description: "This is a visual match for your image search"
+      },
+      {
+        title: "Visual Match 2",
+        link: "https://example.com/match2",
+        source: "Example Store",
+        imageUrl: "https://via.placeholder.com/300/ff0000",
+        description: "Another visual match with similar properties"
+      },
+      {
+        title: "Visual Match 3", 
+        link: "https://example.com/match3",
+        source: "Example Gallery",
+        imageUrl: "https://via.placeholder.com/300/00ff00",
+        description: "A third visual match showing similar items"
+      },
+      {
+        title: "Visual Match 4",
+        link: "https://example.com/match4",
+        source: "Example Collection",
+        imageUrl: "https://via.placeholder.com/300/0000ff",
+        description: "A fourth visual match for comprehensive results"
+      }
+    ];
     
-    // Ensure the data conforms to our SearchResponse type
-    const formattedResponse: SearchResponse = {
-      searchResults: Array.isArray(mockData.searchResults) 
-        ? mockData.searchResults.map((item: any): SearchResult => ({
-            title: item.title || 'Unknown Title',
-            link: item.link || '#',
-            url: item.link || '#',
-            description: item.description || item.additionalInfo || '',
-            domain: new URL(item.link || 'https://example.com').hostname,
-            source: item.source || 'Unknown Source'
-          }))
-        : [],
-      visualMatches: Array.isArray(mockData.visualMatches) 
-        ? mockData.visualMatches 
-        : fallbackVisualMatches,
-      shoppingResults: Array.isArray(mockData.shoppingResults) 
-        ? mockData.shoppingResults 
-        : fallbackShoppingResults,
-      relatedSearches: [
-        "similar images", 
-        "visual search", 
-        "image recognition",
-        "reverse image search"
-      ]
+    const shoppingResults: ShoppingResult[] = [
+      {
+        title: "Shopping Item 1",
+        link: "https://example.com/shop1",
+        price: "$24.99",
+        store: "Online Store",
+        imageUrl: "https://via.placeholder.com/200"
+      },
+      {
+        title: "Shopping Item 2",
+        link: "https://example.com/shop2",
+        price: "$19.99",
+        store: "Discount Market",
+        imageUrl: "https://via.placeholder.com/200/ff0000"
+      },
+      {
+        title: "Shopping Item 3",
+        link: "https://example.com/shop3",
+        price: "$32.99",
+        store: "Premium Shop",
+        imageUrl: "https://via.placeholder.com/200/00ff00"
+      }
+    ];
+    
+    const mockData: SearchResponse = {
+      searchResults: [
+        {
+          id: "img-search-1",
+          title: "Search Result from Image Analysis",
+          url: "https://example.com/result1",
+          link: "https://example.com/result1",
+          description: "This is a web result based on your image search",
+          domain: "example.com",
+          favicon: "https://example.com/favicon.ico",
+          source: "Example Results"
+        },
+        {
+          id: "img-search-2", 
+          title: "Related Information Found",
+          url: "https://example.org/related-info",
+          link: "https://example.org/related-info",
+          description: "Additional information related to your image query",
+          domain: "example.org",
+          favicon: "https://example.org/favicon.ico",
+          source: "Example Organization"
+        }
+      ],
+      visualMatches: visualMatches,
+      shoppingResults: shoppingResults,
+      relatedSearches: ["similar images", "visual search", "image recognition", "reverse image search"]
     };
     
-    return formattedResponse;
+    console.log("Returning mock image search data with", mockData.visualMatches?.length || 0, "visual matches");
+    return mockData;
+    
   } catch (error) {
-    console.error("Error loading mock image search data:", error);
-    
-    // Return fallback data
-    return {
-      searchResults: [],
-      visualMatches: fallbackVisualMatches,
-      shoppingResults: fallbackShoppingResults,
-      relatedSearches: ["similar images", "visual search"]
-    };
+    console.error("Error creating mock image search data:", error);
+    return getFallbackImageSearchResults();
   }
 };
 
-// Helper function to get mock text search results
+// Helper function to get mock text search results - REPLACED require() with empty array default
 const getMockTextSearchResults = (): SearchResult[] => {
-  try {
-    return require('@/data/mockSearchResults').mockTextSearchResults;
-  } catch (error) {
-    console.error("Error loading mock text search results:", error);
-    return [];
-  }
+  // Simple mock text search results without using require
+  return [
+    {
+      id: "text-1",
+      title: "Google Search - Wikipedia",
+      url: "https://en.wikipedia.org/wiki/Google_Search",
+      link: "https://en.wikipedia.org/wiki/Google_Search",
+      description: "Google Search is a search engine provided by Google. Handling more than 3.5 billion searches per day, it has a 92% share of the global search engine market.",
+      domain: "wikipedia.org",
+      favicon: "https://en.wikipedia.org/favicon.ico",
+      source: "Wikipedia",
+      date: "2025-01-15"
+    },
+    {
+      id: "text-2",
+      title: "Google",
+      url: "https://www.google.com",
+      link: "https://www.google.com",
+      description: "The official website for Google Search. Search the world's information, including webpages, images, videos and more.",
+      domain: "google.com",
+      favicon: "https://www.google.com/favicon.ico",
+      source: "Google",
+      date: "2025-04-01"
+    }
+  ];
 };

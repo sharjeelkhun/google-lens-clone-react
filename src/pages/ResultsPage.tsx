@@ -1,8 +1,8 @@
 
 import { useNavigate } from "react-router-dom";
 import { useSearch } from "@/context/SearchContext";
-import { Search, Mic, Camera, ChevronLeft, ChevronRight, Grid } from "lucide-react";
-import { useState } from "react";
+import { Search, Mic, Camera, ChevronLeft, ChevronRight, Grid, ArrowLeft } from "lucide-react";
+import { useState, useEffect } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useQuery } from "@tanstack/react-query";
 import { fetchSearchResults } from "@/api/searchApi";
@@ -18,16 +18,28 @@ const ResultsPage = () => {
     setSearchTerm, 
     isListening, 
     setIsListening,
-    addToHistory 
+    addToHistory,
+    searchImage,
+    clearSearch
   } = useSearch();
   const [activeTab, setActiveTab] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const resultsPerPage = 10;
 
+  // Determine if we're doing an image search based on searchImage having results
+  const isImageSearch = !!searchImage.preview && !!searchImage.searchResults?.length;
+  
+  // Set active tab to "images" if we have image search results
+  useEffect(() => {
+    if (isImageSearch) {
+      setActiveTab("images");
+    }
+  }, [isImageSearch]);
+
   const { data: searchResults, isLoading } = useQuery({
     queryKey: ["searchResults", searchTerm, activeTab],
     queryFn: () => fetchSearchResults({ query: searchTerm, type: activeTab === 'images' ? 'image' : 'web' }),
-    enabled: !!searchTerm,
+    enabled: !!searchTerm && !isImageSearch,
   });
 
   const handleTabChange = (value: string) => {
@@ -72,16 +84,24 @@ const ResultsPage = () => {
     ? searchResults.searchResults.slice((currentPage - 1) * resultsPerPage, currentPage * resultsPerPage)
     : [];
 
+  // Handle back button to clear image search if we're doing one
+  const handleNavigateBack = () => {
+    if (isImageSearch) {
+      clearSearch();
+    }
+    navigate('/');
+  };
+
   // Header Content
   const headerContent = (
     <div className="container-custom">
       <div className="flex items-center justify-between py-2">
         <div className="flex items-center gap-4">
           <button 
-            onClick={() => navigate('/')}
+            onClick={handleNavigateBack}
             className="h-8 w-8 flex items-center justify-center"
           >
-            <ChevronLeft className="h-5 w-5 text-gray-500" />
+            <ArrowLeft className="h-5 w-5 text-gray-500" />
           </button>
           <div className="flex items-center">
             <span className="text-2xl font-medium text-google-blue">G</span>
@@ -105,15 +125,25 @@ const ResultsPage = () => {
       
       {/* Search Input */}
       <form onSubmit={handleSearch} className="mt-2 mb-3">
-        <div className="search-bar-container">
+        <div className="search-bar-container border border-gray-300 rounded-full px-4 py-2 flex items-center">
           <Search className="text-gray-400 w-4 h-4 mr-3" />
           <input
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Search Google"
-            className="flex-1 bg-transparent"
+            placeholder={isImageSearch ? "Google Lens" : "Search Google"}
+            className="flex-1 bg-transparent outline-none text-sm"
           />
+          {isImageSearch && searchImage.preview && (
+            <div className="flex items-center">
+              <div className="h-6 mx-2 border-l border-gray-300"></div>
+              <img 
+                src={searchImage.preview} 
+                alt="Search" 
+                className="h-8 w-8 object-cover rounded-sm"
+              />
+            </div>
+          )}
           <div className="flex items-center space-x-3">
             <button type="button" onClick={handleVoiceSearch} className="hover:bg-gray-100 p-2 rounded-full">
               {isListening ? (
@@ -235,22 +265,53 @@ const ResultsPage = () => {
               <div className="col-span-full flex justify-center py-10">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-google-blue"></div>
               </div>
-            ) : (
-              searchResults?.visualMatches?.slice(0, 12).map((result) => (
+            ) : isImageSearch ? (
+              // Display images from image search
+              searchImage.searchResults?.map((result, index) => (
                 <motion.div
-                  key={result.imageUrl}
+                  key={`${result.imageUrl}-${index}`}
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ duration: 0.3 }}
-                  className="group aspect-square rounded-lg overflow-hidden"
+                  className="group"
                 >
-                  <img
-                    src={result.imageUrl || 'https://placehold.co/300x300/e9ecef/495057?text=Image'}
-                    alt={result.title}
-                    className="w-full h-full object-cover group-hover:opacity-90 transition-opacity"
-                  />
+                  <div className="aspect-square rounded-lg overflow-hidden mb-1">
+                    <img
+                      src={result.imageUrl || 'https://placehold.co/300x300/e9ecef/495057?text=Image'}
+                      alt={result.title}
+                      className="w-full h-full object-cover group-hover:opacity-90 transition-opacity"
+                    />
+                  </div>
+                  <h4 className="text-sm truncate">{result.title}</h4>
+                  <p className="text-xs text-gray-500 truncate">{result.source}</p>
                 </motion.div>
               ))
+            ) : (
+              searchResults?.visualMatches?.slice(0, 12).map((result, index) => (
+                <motion.div
+                  key={`${result.imageUrl}-${index}`}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.3 }}
+                  className="group"
+                >
+                  <div className="aspect-square rounded-lg overflow-hidden mb-1">
+                    <img
+                      src={result.imageUrl || 'https://placehold.co/300x300/e9ecef/495057?text=Image'}
+                      alt={result.title}
+                      className="w-full h-full object-cover group-hover:opacity-90 transition-opacity"
+                    />
+                  </div>
+                  <h4 className="text-sm truncate">{result.title}</h4>
+                  <p className="text-xs text-gray-500 truncate">{result.source}</p>
+                </motion.div>
+              ))
+            )}
+            
+            {isImageSearch && (!searchImage.searchResults || searchImage.searchResults.length === 0) && (
+              <div className="col-span-full text-center py-8">
+                <p className="text-gray-500">No image matches found</p>
+              </div>
             )}
           </div>
         </TabsContent>
