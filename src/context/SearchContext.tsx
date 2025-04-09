@@ -1,6 +1,6 @@
-
 import { createContext, useContext, useState, ReactNode, useCallback, useEffect } from 'react';
 import { fetchSearchResults, fetchImageSearchResults, SearchResponse } from '@/api/searchApi';
+import { toast } from "@/hooks/use-toast";
 
 type SearchImage = {
   file: File | null;
