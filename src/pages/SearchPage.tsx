@@ -15,9 +15,10 @@ const SearchPage = () => {
     searchTerm, 
     setSearchTerm, 
     isListening, 
-    setIsListening, 
+    setIsListening,
     addToHistory, 
-    performImageSearch 
+    performImageSearch,
+    setSearchImage
   } = useSearch();
   const [focusedInput, setFocusedInput] = useState(false);
   const [openCamera, setOpenCamera] = useState(false);
@@ -35,7 +36,9 @@ const SearchPage = () => {
     const stateOpenCamera = location.state?.openCamera;
     if (stateOpenCamera) {
       setOpenCamera(true);
-      startCamera();
+      setTimeout(() => {
+        startCamera();
+      }, 500);
     }
   }, [location.state]);
 
@@ -44,6 +47,13 @@ const SearchPage = () => {
       inputRef.current.focus();
     }
   }, [openCamera]);
+
+  // Clean up camera resources when component unmounts
+  useEffect(() => {
+    return () => {
+      stopCamera();
+    };
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,11 +91,15 @@ const SearchPage = () => {
     setCameraError(null);
     try {
       if (videoRef.current) {
+        console.log("Requesting camera access...");
         const stream = await navigator.mediaDevices.getUserMedia({
           video: { facingMode: "environment" }
         });
+        
+        console.log("Camera access granted, setting up video stream");
         videoRef.current.srcObject = stream;
         videoRef.current.onloadedmetadata = () => {
+          console.log("Video metadata loaded, camera is now capturing");
           setCameraCapturing(true);
         };
       }
@@ -101,9 +115,13 @@ const SearchPage = () => {
   };
 
   const stopCamera = () => {
+    console.log("Stopping camera...");
     if (videoRef.current && videoRef.current.srcObject) {
       const tracks = (videoRef.current.srcObject as MediaStream).getTracks();
-      tracks.forEach(track => track.stop());
+      tracks.forEach(track => {
+        console.log("Stopping track:", track.kind, track.label);
+        track.stop()
+      });
       videoRef.current.srcObject = null;
       setCameraCapturing(false);
     }
@@ -111,6 +129,7 @@ const SearchPage = () => {
 
   const captureImage = () => {
     if (videoRef.current && canvasRef.current && cameraCapturing) {
+      console.log("Capturing image from video feed");
       const video = videoRef.current;
       const canvas = canvasRef.current;
       const context = canvas.getContext("2d");
@@ -128,6 +147,7 @@ const SearchPage = () => {
         
         try {
           const imageDataUrl = canvas.toDataURL("image/jpeg");
+          console.log("Image captured successfully, data URL length:", imageDataUrl.length);
           setSelectedImage(imageDataUrl);
           stopCamera();
         } catch (err) {
@@ -139,6 +159,13 @@ const SearchPage = () => {
           });
         }
       }
+    } else {
+      console.error("Cannot capture image: video or canvas not available or camera not capturing");
+      toast({
+        title: "Capture Error",
+        description: "Camera is not ready yet",
+        variant: "destructive"
+      });
     }
   };
 
@@ -149,18 +176,28 @@ const SearchPage = () => {
       setSelectedImage(null);
     } else {
       setOpenCamera(true);
-      startCamera();
+      setTimeout(() => startCamera(), 300);
     }
   };
 
   const handleSearchWithImage = async () => {
     if (selectedImage) {
       try {
+        console.log("Processing image for search...");
         setIsProcessing(true);
+        
         // Convert data URL to File object
         const response = await fetch(selectedImage);
         const blob = await response.blob();
         const file = new File([blob], "captured-image.jpg", { type: "image/jpeg" });
+        
+        console.log("File created successfully, size:", file.size);
+        
+        // Save image preview to context
+        setSearchImage({
+          file,
+          preview: selectedImage
+        });
         
         // Use the performImageSearch function from context
         await performImageSearch(file);
@@ -174,12 +211,17 @@ const SearchPage = () => {
         console.error("Error processing image search:", error);
         toast({
           title: "Image Search Failed",
-          description: "Could not process the image search",
+          description: "Could not process the image search. Please try again.",
           variant: "destructive"
         });
-      } finally {
         setIsProcessing(false);
       }
+    } else {
+      toast({
+        title: "No Image Selected",
+        description: "Please capture an image first",
+        variant: "destructive"
+      });
     }
   };
 

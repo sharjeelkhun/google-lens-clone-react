@@ -92,13 +92,37 @@ export const fetchImageSearchResults = async (imageFile: File): Promise<SearchRe
     
     // Get mock image search data
     const mockData = getMockImageSearchResults();
-    console.log("Image search mock data retrieved:", mockData);
+    console.log("Image search mock data retrieved:", mockData.visualMatches?.length || 0, "visual matches");
     
+    // Ensure we return properly structured data
     return {
       searchResults: Array.isArray(mockData.searchResults) ? mockData.searchResults : [],
-      visualMatches: Array.isArray(mockData.visualMatches) ? mockData.visualMatches : [],
-      shoppingResults: Array.isArray(mockData.shoppingResults) ? mockData.shoppingResults : [],
-      relatedSearches: Array.isArray(mockData.relatedSearches) ? mockData.relatedSearches : []
+      visualMatches: Array.isArray(mockData.visualMatches) ? mockData.visualMatches : [
+        {
+          title: "Similar Object",
+          link: "https://example.com/similar1",
+          source: "Example Source",
+          imageUrl: "https://via.placeholder.com/150",
+          description: "A similar object found in our database"
+        },
+        {
+          title: "Related Item",
+          link: "https://example.com/related1",
+          source: "Example Store",
+          imageUrl: "https://via.placeholder.com/150",
+          description: "A related item you might be interested in"
+        }
+      ],
+      shoppingResults: Array.isArray(mockData.shoppingResults) ? mockData.shoppingResults : [
+        {
+          title: "Product Match",
+          link: "https://example.com/product1",
+          price: "$19.99",
+          store: "Example Shop", 
+          imageUrl: "https://via.placeholder.com/150"
+        }
+      ],
+      relatedSearches: Array.isArray(mockData.relatedSearches) ? mockData.relatedSearches : ["similar images", "visual search"]
     };
   } catch (error) {
     console.error('Error in image search:', error);

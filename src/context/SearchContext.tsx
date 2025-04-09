@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useState, ReactNode, useCallback, useEffect } from 'react';
 import { fetchSearchResults, fetchImageSearchResults, SearchResponse } from '@/api/searchApi';
 
@@ -161,12 +160,15 @@ export const SearchProvider = ({ children }: { children: ReactNode }) => {
   }, []);
   
   const performImageSearch = useCallback(async (imageFile: File): Promise<void> => {
-    if (!imageFile) return;
+    if (!imageFile) {
+      console.error("No image file provided to performImageSearch");
+      return;
+    }
     
     try {
-      console.log("Processing image search with file:", imageFile.name);
+      console.log("Processing image search with file:", imageFile.name, "size:", imageFile.size);
       
-      // First set the image in context
+      // First set the image in context (this might be redundant if already set in SearchPage)
       setSearchImage(prev => ({
         ...prev,
         file: imageFile,
@@ -180,7 +182,7 @@ export const SearchProvider = ({ children }: { children: ReactNode }) => {
       // Update context with results
       setSearchImage(prev => ({
         ...prev,
-        searchResults: results.visualMatches || []
+        searchResults: Array.isArray(results.visualMatches) ? results.visualMatches : []
       }));
       
     } catch (error) {
